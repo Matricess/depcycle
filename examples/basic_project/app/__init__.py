@@ -1,4 +1,0 @@
-"""Basic acyclic example package."""
-
-
-

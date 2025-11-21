@@ -1,13 +1,11 @@
 """DependencyGraph class representing the core graph data structure."""
 
 from pathlib import Path
-from typing import Dict, List, Set, Optional
-
-from .module_node import ModuleNode, ModuleType
+from ..config import Config
 from ..parsing.project import Project
 from ..parsing.ast_parser import ASTParser
-from ..config import Config
-
+from typing import Dict, List, Set, Optional
+from .module_node import ModuleNode, ModuleType
 
 class DependencyGraph:
     """
@@ -21,6 +19,7 @@ class DependencyGraph:
         """Initialize an empty dependency graph."""
         self.nodes: Dict[str, ModuleNode] = {}
         self._project_root: Optional[Path] = None
+        self._analysis_root: Optional[Path] = None
     
     def build(self, project: Project, parser: ASTParser, config: Config):
         """
@@ -39,9 +38,13 @@ class DependencyGraph:
             config: Configuration settings for filtering.
         """
         self._project_root = project.root_path
+        self._analysis_root = project.root_path
         
         # Step 1: Discover all Python files
-        python_files = project.get_python_files(config.exclude_patterns)
+        python_files = project.get_python_files(
+            config.exclude_patterns, 
+            not config.include_all
+        )
         
         # Step 2: Create nodes for each Python file
         for file_path in python_files:
@@ -105,6 +108,7 @@ class DependencyGraph:
         - Absolute imports: 'os' -> looks for 'os' in graph
         - Relative imports: '.utils' -> resolves relative to current_module
         - Dotted imports: 'app.models' -> tries to find exact or parent module
+        - Absolute imports with project prefix when analyzing subdirectories
         
         Args:
             import_str: The raw import string.
@@ -124,12 +128,36 @@ class DependencyGraph:
         if import_str in self.nodes:
             return self.nodes[import_str]
         
+        # NEW: Handle absolute imports that reference parent package
+        # When analyzing subdirectory, imports like "app.models" might actually mean "models"
+        if self._project_root and '.' in import_str:
+            # Get the project root name (last part of the path)
+            project_root_name = self._project_root.name
+            
+            # Check if import starts with project root name
+            if import_str.startswith(project_root_name + '.'):
+                # Strip the project root prefix and try again
+                stripped_import = import_str[len(project_root_name) + 1:]
+                if stripped_import in self.nodes:
+                    return self.nodes[stripped_import]
+                
+                # Also try variants of the stripped import
+                for variant in self._get_import_variants(stripped_import):
+                    if variant in self.nodes:
+                        return self.nodes[variant]
+        
         # Try to find the parent module of the import
-        # e.g., 'os.path.join' -> look for 'os' or 'os.path' or 'os.path.join'
-        # e.g., 'config.Config' -> look for 'config'
         for potential_module in self._get_import_variants(import_str):
             if potential_module in self.nodes:
                 return self.nodes[potential_module]
+            
+            # NEW: Also try stripping project root from variants
+            if self._project_root and '.' in potential_module:
+                project_root_name = self._project_root.name
+                if potential_module.startswith(project_root_name + '.'):
+                    stripped_variant = potential_module[len(project_root_name) + 1:]
+                    if stripped_variant in self.nodes:
+                        return self.nodes[stripped_variant]
         
         return None
     
@@ -338,4 +366,3 @@ class DependencyGraph:
     def __iter__(self):
         """Allow iteration over nodes."""
         return iter(self.nodes.values())
-

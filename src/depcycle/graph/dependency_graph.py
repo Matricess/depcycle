@@ -1,5 +1,4 @@
 """DependencyGraph class representing the core graph data structure."""
-
 from pathlib import Path
 from ..config import Config
 from ..parsing.project import Project
@@ -88,16 +87,45 @@ class DependencyGraph:
         """
         Resolve raw import strings to actual ModuleNode dependencies.
         
-        For each node, this method tries to match its raw_imports to other
-        nodes in the graph. It handles both absolute and relative imports.
+        For each node, this method matches raw_imports to other nodes.
+        If a local match isn't found, it creates a new node representing
+        an external dependency (Standard Lib or Third Party).
         """
-        for node in self.nodes.values():
+        # Iterate over a copy because we might add new nodes during the loop
+        current_nodes = list(self.nodes.values())
+        
+        for node in current_nodes:
+            # We only resolve dependencies for LOCAL nodes (source files we scanned)
+            if node.module_type != ModuleType.LOCAL:
+                continue
+
             node.dependencies = set()
             
             for import_str in node.raw_imports:
-                # Try to resolve the import
+                # 1. Try to resolve to an existing local module
                 dependency_node = self._resolve_import(import_str, node.name)
-                if dependency_node is not None:
+                
+                # 2. If not found locally, treat as External (Stdlib/Third-Party)
+                if dependency_node is None:
+                    # Ignore relative imports that failed to resolve (broken local code)
+                    if import_str.startswith('.'):
+                        continue
+
+                    # Check if we already created a node for this external lib
+                    if import_str in self.nodes:
+                        dependency_node = self.nodes[import_str]
+                    else:
+                        # Create a new placeholder node
+                        # We default to THIRD_PARTY; _classify_modules will correct this later
+                        dependency_node = ModuleNode(
+                            name=import_str, 
+                            file_path=None, 
+                            module_type=ModuleType.THIRD_PARTY
+                        )
+                        self.add_node(dependency_node)
+                
+                # 3. Link the dependency
+                if dependency_node:
                     node.dependencies.add(dependency_node)
     
     def _resolve_import(self, import_str: str, current_module: str) -> Optional[ModuleNode]:

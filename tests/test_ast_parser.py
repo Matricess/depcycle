@@ -1,29 +1,30 @@
+import pytest
 import textwrap
-from pathlib import Path
-
 from depcycle.parsing.ast_parser import ASTParser
 
+@pytest.mark.parametrize("code,expected_imports", [
+    ("import os", {"os"}),
+    ("import sys as s", {"sys"}),
+    ("from json import dumps", {"json.dumps"}),
+    ("from os.path import join as j", {"os.path.join"}),
+    ("from . import localmod", {"."}),
+    ("from .pkg import submod", {".pkg"}),
+    ("import os, sys", {"os", "sys"}),
+    ("from .sub import *", {".sub"}),
+])
+def test_parser_imports(tmp_path, code, expected_imports):
+    """Verify AST parser correctly identifies various import styles."""
+    f = tmp_path / "module.py"
+    f.write_text(code, encoding="utf-8")
+    
+    imports = ASTParser.get_imports_from_file(f)
+    assert imports.issuperset(expected_imports)
 
-def test_ast_parser_extracts_all_import_shapes(tmp_path: Path):
-    code = textwrap.dedent(
-        """
-        import os
-        import sys as system
-        from json import dumps
-        from os.path import join as j
-        from . import localmod
-        from .pkg import submod
-        """
-    )
-    file_path = tmp_path / "module.py"
-    file_path.write_text(code, encoding="utf-8")
-
-    imports = ASTParser.get_imports_from_file(file_path)
-
-    assert "os" in imports
-    assert "sys" in imports  # alias should resolve to original module name
-    assert "json.dumps" in imports
-    assert "os.path.join" in imports
-    assert "." in imports  # from . import localmod
-    assert ".pkg" in imports  # from .pkg import submod
-
+def test_parser_handles_syntax_errors(tmp_path):
+    """Resilience test: Parser should not crash on invalid Python syntax."""
+    f = tmp_path / "broken.py"
+    f.write_text("def broken_func( param: ", encoding="utf-8")
+    
+    # Should simply return empty set, not raise SyntaxError
+    imports = ASTParser.get_imports_from_file(f)
+    assert imports == set()

@@ -38,14 +38,12 @@ class ASTParser:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
         except UnicodeDecodeError:
-            # Skip non-UTF-8 files gracefully
             return set()
         
         try:
             tree = ast.parse(content, filename=str(file_path))
         except SyntaxError as e:
             # Log and continue - some files might have syntax errors
-            # In production, you might want to log this
             return set()
         
         imports = set()

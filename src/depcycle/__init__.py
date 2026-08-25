@@ -5,13 +5,19 @@ DepCycle helps developers understand complex codebases by automatically
 generating visual maps of module dependencies.
 """
 
-__version__ = "0.2.0"
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("depcycle")
+except PackageNotFoundError:
+    # Package is not installed (e.g. running directly from source).
+    __version__ = "0.0.0"
 
 from .cli import DepCycleCLI
 from .config import Config
 from .graph import DependencyGraph, ModuleNode, ModuleType
-from .parsing import Project, ASTParser
-from .rendering import IGraphVisualizer, GraphvizVisualizer, HtmlVisualizer
+from .parsing import ASTParser, Project
+from .rendering import GraphvizVisualizer, HtmlVisualizer, IGraphVisualizer
 
 __all__ = [
     'DepCycleCLI',

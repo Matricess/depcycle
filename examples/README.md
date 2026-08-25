@@ -1,20 +1,20 @@
 Examples for trying DepCycle quickly
 
 Contents
-- basic_project: No cycles, simple layered imports
-- cyclic_project: Intentional cycle between modules
+- clean_project: No cycles, simple layered imports
+- messy_project: Intentional cycle between modules
 
 How to run
 - From repo root (this folder):
 
-Basic (acyclic) graph, SVG:
+Clean (acyclic) graph, SVG:
 ```bash
-depcycle "examples/basic_project" -o basic_deps.svg --format svg
+uv run depcycle "examples/clean_project" -o clean_deps.svg --format svg
 ```
 
-Cyclic graph, SVG (shows cycle warning):
+Messy graph, SVG (shows cycle warning):
 ```bash
-depcycle "examples/cyclic_project" -o cyclic_deps.svg --format svg
+uv run depcycle "examples/messy_project" -o messy_deps.svg --format svg
 ```
 
 Tips

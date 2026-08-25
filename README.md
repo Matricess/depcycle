@@ -22,7 +22,6 @@ month](https://img.shields.io/pypi/dm/depcycle.svg)](https://pypi.org/project/de
 
 - **Repository:** https://github.com/Matricess/depcycle.git
 - **Tests:** https://github.com/Matricess/depcycle/tree/main/tests
-- **Design commentary:** https://github.com/Matricess/depcycle/blob/main/DESIGN.md
 - **Sample dependency graph:** `examples/` (local)
 
 ## Prerequisites

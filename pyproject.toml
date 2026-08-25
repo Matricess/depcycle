@@ -54,3 +54,6 @@ package-dir = {"" = "src"}
 where = ["src"]
 include = ["depcycle*"]
 
+[tool.setuptools.package-data]
+depcycle = ["py.typed"]
+

@@ -16,18 +16,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-          cache: 'pip'
-
-      - name: Install build dependencies
-        run: |
-          pip install build
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
 
       - name: Build Source and Wheel distributions
-        run: python -m build
+        run: uv build
 
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1 

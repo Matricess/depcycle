@@ -36,8 +36,9 @@ This directory contains the comprehensive test suite for DepCycle. The tests are
 We use `pytest` for execution with a centralized `conftest.py` fixture configuration.
 
 ```bash
-# Install test dependencies
-pip install -r requirements.txt
+# Install project and test dependencies
+uv sync
 
 # Run all tests (should pass 17/17)
-pytest -v
+uv run pytest -v
+```

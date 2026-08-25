@@ -32,6 +32,9 @@ month](https://img.shields.io/pypi/dm/depcycle.svg)](https://pypi.org/project/de
 
 ### Installing Graphviz
 
+The Python `graphviz` package is installed by uv. The Graphviz system
+executable is also required for PNG and SVG output.
+
 **macOS:**
 ```bash
 brew install graphviz
@@ -47,15 +50,10 @@ Download and install from [Graphviz website](https://graphviz.org/download/)
 
 ## Installation
 
-### Install via pip (recommended)
+### Install with uv
 
 ```bash
-pip install depcycle
-
-or 
-
-# install directly from GitHub
-pip install git+https://github.com/Matricess/depcycle.git
+uv sync
 ```
 
 ### Install from a clone (editable dev setup)
@@ -63,10 +61,8 @@ pip install git+https://github.com/Matricess/depcycle.git
 ```bash
 git clone https://github.com/Matricess/depcycle.git
 cd depcycle
-pip install -e .[dev]
+uv sync
 ```
-
-If you prefer requirements files, `pip install -r requirements.txt` will install runtime deps plus `pytest` for the test suite.
 
 ## Usage
 
@@ -75,7 +71,7 @@ If you prefer requirements files, `pip install -r requirements.txt` will install
 Analyze a Python project and generate a dependency graph (PNG by default):
 
 ```bash
-depcycle /path/to/your/project
+uv run depcycle /path/to/your/project
 ```
 
 The output is written to `dependencies.png` in the current working directory.
@@ -85,7 +81,7 @@ The output is written to `dependencies.png` in the current working directory.
 ### Using as a Module
 
 ```bash
-python -m depcycle /path/to/your/project
+uv run python -m depcycle /path/to/your/project
 ```
 
 ### Advanced Options
@@ -93,25 +89,25 @@ python -m depcycle /path/to/your/project
 Generate a different output format or explicit location:
 
 ```bash
-depcycle /path/to/project --format svg --output diagrams/dependencies.svg
+uv run depcycle /path/to/project --format svg --output diagrams/dependencies.svg
 ```
 
 Exclude specific directories or files (glob syntax):
 
 ```bash
-depcycle /path/to/project -e venv -e ".*/tests/*" -e "*.test.py"
+uv run depcycle /path/to/project -e venv -e ".*/tests/*" -e "*.test.py"
 ```
 
 Focus only on local code:
 
 ```bash
-depcycle /path/to/project --no-third-party --no-stdlib
+uv run depcycle /path/to/project --no-third-party --no-stdlib
 ```
 
 **Full help:**
 
 ```bash
-depcycle --help
+uv run depcycle --help
 ```
 
 ## Tests
@@ -119,8 +115,8 @@ depcycle --help
 Tests live under `tests/` and run without touching the sample projects in `examples/`.
 
 ```bash
-pip install -e .[dev]
-pytest -q
+uv sync
+uv run pytest -q
 ```
 
 See [`tests/README.md`](tests/README.md) for a quick summary.
@@ -147,7 +143,6 @@ depcycle/
 │           ├── __init__.py
 │           ├── interface.py        # Visualization interface
 │           └── visualizers.py      # Output implementations
-├── requirements.txt
 ├── README.md
 └── LICENSE
 ```

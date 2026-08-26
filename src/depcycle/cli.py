@@ -4,6 +4,8 @@ it defines the user-facing commands, parses arguments, and orchestrates
 the dependency analysis and visualization workflow.
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
 from pathlib import Path
@@ -35,13 +37,13 @@ class DepCycleCLI:
     """
     
     @staticmethod
-    def main(args: list = None):
+    def main(args: list[str] | None = None):
         """
         Main entry point for the DepCycle CLI.
-        
+
         Parses command-line arguments, creates configuration, and runs
         the dependency analysis workflow.
-        
+
         Args:
             args: Command-line arguments (defaults to sys.argv).
         """
@@ -87,12 +89,12 @@ class DepCycleCLI:
         except KeyboardInterrupt:
             print("\nInterrupted by user")
             sys.exit(1)
-        except Exception as e:
-            print(f"Error: {e}", file=sys.stderr)
+        except (OSError, RuntimeError, TypeError, ValueError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
             sys.exit(1)
     
     @staticmethod
-    def run(config: AnalysisConfig, output_path: Path = None, output_format: str = "png"):
+    def run(config: AnalysisConfig, output_path: Path | None = None, output_format: str = "png"):
         """Execute the dependency analysis and visualization workflow."""
         print(f"Analyzing project: {config.project_path}")
 

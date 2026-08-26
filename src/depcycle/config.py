@@ -1,7 +1,8 @@
 """Analysis configuration for DepCycle settings."""
 
+from __future__ import annotations
+
 from pathlib import Path
-from typing import List, Optional
 
 # Default exclusion patterns that are automatically applied
 DEFAULT_EXCLUDE_PATTERNS = [
@@ -33,7 +34,7 @@ class AnalysisConfig:
     def __init__(
         self,
         project_path: Path,
-        exclude_patterns: Optional[List[str]] = None,
+        exclude_patterns: list[str] | None = None,
         show_third_party: bool = True,
         show_stdlib: bool = True,
         show_unknown: bool = True,
@@ -47,7 +48,7 @@ class AnalysisConfig:
         self.include_all = include_all
 
     @staticmethod
-    def _build_exclude_patterns(exclude_patterns: Optional[List[str]], include_all: bool) -> List[str]:
+    def _build_exclude_patterns(exclude_patterns: list[str] | None, include_all: bool) -> list[str]:
         user_patterns = exclude_patterns if exclude_patterns is not None else []
         if include_all:
             return list(user_patterns)
@@ -76,9 +77,9 @@ class Config(AnalysisConfig):
     def __init__(
         self,
         project_path: Path,
-        output_file: Optional[Path] = None,
+        output_file: Path | None = None,
         output_format: str = "png",
-        exclude_patterns: Optional[List[str]] = None,
+        exclude_patterns: list[str] | None = None,
         show_third_party: bool = True,
         show_stdlib: bool = True,
         show_unknown: bool = True,

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional
 
 from ..graph.graph import DependencyGraph
 from ..graph.node import ModuleType
@@ -14,7 +13,7 @@ from .base import IOutputWriter
 class JsonWriter(IOutputWriter):
     """Serialize a dependency graph to JSON."""
 
-    def write(self, graph: DependencyGraph, dest: Optional[Path] = None) -> None:
+    def write(self, graph: DependencyGraph, dest: Path | None = None) -> None:
         payload = self._build_payload(graph)
         text = json.dumps(payload, indent=2)
 

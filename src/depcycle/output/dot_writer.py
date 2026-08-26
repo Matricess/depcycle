@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 from ..graph.graph import DependencyGraph
 from ..graph.node import ModuleType
@@ -13,7 +12,7 @@ from .base import IOutputWriter
 class DotWriter(IOutputWriter):
     """Serialize a dependency graph to Graphviz DOT syntax."""
 
-    def write(self, graph: DependencyGraph, dest: Optional[Path] = None) -> None:
+    def write(self, graph: DependencyGraph, dest: Path | None = None) -> None:
         text = self._build_dot(graph)
 
         if dest is None:

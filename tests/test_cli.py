@@ -1,7 +1,7 @@
-import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from depcycle.cli import DepCycleCLI
 from depcycle.config import AnalysisConfig
 

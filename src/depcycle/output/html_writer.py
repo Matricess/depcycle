@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional
 
 from ..graph.graph import DependencyGraph
 from ..graph.node import ModuleType
@@ -14,7 +13,7 @@ from .base import IOutputWriter
 class HtmlWriter(IOutputWriter):
     """Serialize a dependency graph to a self-contained HTML document."""
 
-    def write(self, graph: DependencyGraph, dest: Optional[Path] = None) -> None:
+    def write(self, graph: DependencyGraph, dest: Path | None = None) -> None:
         html = self._build_html(graph)
 
         if dest is None:

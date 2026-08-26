@@ -1,15 +1,14 @@
 """DependencyGraph class representing the core graph data structure."""
+from __future__ import annotations
+
 import sys
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Set
 
 from ..config import Config
-from ..parsing.ast_parser import ASTParser
-from ..parsing.project import Project
 from .node import ModuleNode, ModuleType
 
 
-def _stdlib_module_names() -> Set[str]:
+def _stdlib_module_names() -> set[str]:
     """Return Python stdlib module names available on this runtime."""
     stdlib_names = getattr(sys, "stdlib_module_names", None)
     if stdlib_names is not None:
@@ -35,19 +34,19 @@ def _stdlib_module_names() -> Set[str]:
 class DependencyGraph:
     """
     The Blueprint: The central data structure holding the dependency graph.
-    
+
     This class orchestrates the process of building a dependency graph from
     a Python project, resolving import relationships, and detecting cycles.
     """
-    
+
     def __init__(self):
         """Initialize an empty dependency graph."""
-        self.nodes: Dict[str, ModuleNode] = {}
-        self._project_root: Optional[Path] = None
-        self._analysis_root: Optional[Path] = None
-        self._known_stdlib: Set[str] = _stdlib_module_names()
-        self._known_third_party: Set[str] = set()
-    
+        self.nodes: dict[str, ModuleNode] = {}
+        self._project_root: Path | None = None
+        self._analysis_root: Path | None = None
+        self._known_stdlib: set[str] = _stdlib_module_names()
+        self._known_third_party: set[str] = set()
+
     def build(self, project_or_files, parser_or_root, config_or_parser=None):
         """
         Build the dependency graph from either the legacy Project/Config API or the
@@ -57,6 +56,9 @@ class DependencyGraph:
             files = [Path(p) for p in project_or_files]
             project_root = Path(parser_or_root).resolve()
             parser = config_or_parser
+            if parser is None or not hasattr(parser, "get_imports_from_file"):
+                raise TypeError("A parser with get_imports_from_file() is required for file-based graph builds.")
+
             self.nodes.clear()
             self._project_root = project_root
             self._analysis_root = project_root
@@ -74,6 +76,9 @@ class DependencyGraph:
         project = project_or_files
         parser = parser_or_root
         config = config_or_parser
+        if config is None or not hasattr(config, "exclude_patterns") or not hasattr(config, "include_all"):
+            raise TypeError("A config object with exclude_patterns/include_all is required for project-based graph builds.")
+
         self._project_root = project.root_path
         self._analysis_root = project.root_path
 
@@ -117,7 +122,7 @@ class DependencyGraph:
 
         return self
 
-    def classify(self, known_stdlib: Optional[Set[str]] = None, known_third_party: Optional[Set[str]] = None):
+    def classify(self, known_stdlib: set[str] | None = None, known_third_party: set[str] | None = None):
         """Classify each non-local node as stdlib, third-party, or unknown."""
         if known_stdlib is not None:
             stdlib_names = set(known_stdlib)
@@ -154,13 +159,11 @@ class DependencyGraph:
 
         keep_modules = set()
         for node in self.nodes.values():
-            if node.module_type == ModuleType.LOCAL:
-                keep_modules.add(node.name)
-            elif node.module_type == ModuleType.THIRD_PARTY and show_third_party:
-                keep_modules.add(node.name)
-            elif node.module_type == ModuleType.STDLIB and show_stdlib:
-                keep_modules.add(node.name)
-            elif node.module_type == ModuleType.UNKNOWN and show_unknown:
+            if node.module_type == ModuleType.LOCAL or (
+                (node.module_type == ModuleType.THIRD_PARTY and show_third_party)
+                or (node.module_type == ModuleType.STDLIB and show_stdlib)
+                or (node.module_type == ModuleType.UNKNOWN and show_unknown)
+            ):
                 keep_modules.add(node.name)
 
         filtered_out = set(self.nodes.keys()) - keep_modules
@@ -237,7 +240,7 @@ class DependencyGraph:
                 if dependency_node:
                     node.dependencies.add(dependency_node)
     
-    def _resolve_import(self, import_str: str, current_module: str) -> Optional[ModuleNode]:
+    def _resolve_import(self, import_str: str, current_module: str) -> ModuleNode | None:
         """
         Resolve an import string to a ModuleNode if it exists in the graph.
         
@@ -298,7 +301,7 @@ class DependencyGraph:
         
         return None
     
-    def _get_import_variants(self, import_str: str) -> List[str]:
+    def _get_import_variants(self, import_str: str) -> list[str]:
         """
         Generate potential module names from an import string.
         
@@ -371,7 +374,7 @@ class DependencyGraph:
     def _classify_modules(self):
         """
         Classify each module as LOCAL, THIRD_PARTY, or STDLIB.
-        
+
         This is currently simplified - in a full implementation, you'd want
         to check against standard library and installed packages.
         """
@@ -387,12 +390,11 @@ class DependencyGraph:
             'weakref', 'gc', 'contextlib', 'decorator', 'profile', 'cProfile',
             'doctest', 'unittest', 'pdb', 'dis', 'compileall', 'py_compile',
             'cmd', 'shlex', 'configparser', 'fileinput', 'locale', 'gettext',
-            'argparse', 'calendar', 'codecs', 'difflib', 'fnmatch', 'glob',
-            'linecache', 'shutil', 'tempfile', 'mmap', 'readline', 'rlcompleter',
-            'sqlite3', 'zlib', 'gzip', 'bz2', 'lzma', 'zipfile', 'tarfile',
-            'csv', 'configparser', 'netrc', 'xdrlib', 'plistlib', 'hashlib',
-            'hmac', 'secrets', 'base64', 'binascii', 'struct', 'codecs',
-            'unicodedata', 'stringprep', 'readline', 'rlcompleter', 'lib2to3'
+            'calendar', 'codecs', 'difflib', 'fnmatch', 'glob', 'linecache',
+            'shutil', 'tempfile', 'mmap', 'readline', 'rlcompleter', 'sqlite3',
+            'zlib', 'gzip', 'bz2', 'lzma', 'zipfile', 'tarfile', 'netrc',
+            'xdrlib', 'plistlib', 'hmac', 'secrets', 'base64', 'binascii',
+            'struct', 'unicodedata', 'stringprep', 'lib2to3'
         }
         
         for node in self.nodes.values():
@@ -412,34 +414,28 @@ class DependencyGraph:
     def _apply_filters(self, config: Config):
         """
         Apply filtering based on configuration options.
-        
+
         Args:
             config: Configuration settings.
         """
-        if config.show_third_party and config.show_stdlib:
+        if config.show_third_party and config.show_stdlib and config.show_unknown:
             return  # Nothing to filter
-        
-        # Build set of modules to keep
+
         keep_modules = set()
         for node in self.nodes.values():
-            if node.module_type == ModuleType.LOCAL:
+            if node.module_type == ModuleType.LOCAL or (
+                (node.module_type == ModuleType.THIRD_PARTY and config.show_third_party)
+                or (node.module_type == ModuleType.STDLIB and config.show_stdlib)
+                or (node.module_type == ModuleType.UNKNOWN and config.show_unknown)
+            ):
                 keep_modules.add(node.name)
-            elif node.module_type == ModuleType.THIRD_PARTY and config.show_third_party:
-                keep_modules.add(node.name)
-            elif node.module_type == ModuleType.STDLIB and config.show_stdlib:
-                keep_modules.add(node.name)
-        
-        # Remove filtered nodes
+
         filtered_out = set(self.nodes.keys()) - keep_modules
         for module_name in filtered_out:
             del self.nodes[module_name]
-        
-        # Clean up dependencies pointing to removed nodes
+
         for node in self.nodes.values():
-            node.dependencies = {
-                dep for dep in node.dependencies 
-                if dep.name in self.nodes
-            }
+            node.dependencies = {dep for dep in node.dependencies if dep.name in self.nodes}
     
     def add_node(self, node: ModuleNode):
         """
@@ -450,7 +446,7 @@ class DependencyGraph:
         """
         self.nodes[node.name] = node
     
-    def find_cycles(self) -> List[List[ModuleNode]]:
+    def find_cycles(self) -> list[list[ModuleNode]]:
         """
         Detect all cycles in the dependency graph.
         

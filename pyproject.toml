@@ -55,3 +55,6 @@ include = ["depcycle*"]
 [tool.setuptools.package-data]
 depcycle = ["py.typed"]
 
+[tool.ruff]
+target-version = "py310"
+

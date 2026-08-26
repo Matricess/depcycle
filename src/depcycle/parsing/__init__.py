@@ -4,5 +4,5 @@ from .ast_parser import ASTParser
 from .metadata import PackageMetadataReader
 from .project import Project
 
-__all__ = ["Project", "ASTParser", "PackageMetadataReader"]
+__all__ = ["ASTParser", "PackageMetadataReader", "Project"]
 

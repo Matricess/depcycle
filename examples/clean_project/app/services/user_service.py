@@ -1,5 +1,7 @@
 from app.utils.validators import validate_user
+
 # Import from models without circular dependency
+
 
 class UserService:
     def create_user(self, name):

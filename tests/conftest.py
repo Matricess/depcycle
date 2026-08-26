@@ -1,6 +1,7 @@
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 # Ensure src/ is in the python path so imports work without installation
 ROOT = Path(__file__).resolve().parents[1]

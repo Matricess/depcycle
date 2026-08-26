@@ -1,7 +1,8 @@
-"""Configuration class for DepCycle settings."""
+"""Analysis configuration for DepCycle settings."""
+
+from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional
 
 # Default exclusion patterns that are automatically applied
 DEFAULT_EXCLUDE_PATTERNS = [
@@ -23,67 +24,75 @@ DEFAULT_EXCLUDE_PATTERNS = [
     'dist',
     'build',
     '*.egg-info',
-    'migrations',  # Django/ORM migration directories
+    'migrations',
 ]
 
 
-class Config:
-    """
-    Holds all configuration settings for a DepCycle run.
-    
-    This class encapsulates all the options that control how DepCycle
-    analyzes and visualizes a Python project.
-    
-    Attributes:
-        project_path (Path): Path to the project root directory.
-        output_file (Path): Path where the output visualization should be saved.
-        output_format (str): Format for the output ('png', 'svg', 'html').
-        exclude_patterns (List[str]): Glob patterns for files to exclude.
-        show_third_party (bool): Whether to include third-party modules.
-        show_stdlib (bool): Whether to include standard library modules.
-        include_all (bool): Whether to include files normally excluded by default patterns.
-    """
-    
+class AnalysisConfig:
+    """Configuration that affects only analysis behavior, not output rendering."""
+
     def __init__(
-        self, 
-        project_path: Path, 
-        output_file: Path, 
-        output_format: str = "png", 
-        exclude_patterns: Optional[List[str]] = None, 
+        self,
+        project_path: Path,
+        exclude_patterns: list[str] | None = None,
         show_third_party: bool = True,
         show_stdlib: bool = True,
-        include_all: bool = False
+        show_unknown: bool = True,
+        include_all: bool = False,
     ):
-        self.project_path = project_path
-        self.output_file = output_file
-        self.output_format = output_format
+        self.project_path = Path(project_path)
+        self.exclude_patterns = self._build_exclude_patterns(exclude_patterns, include_all)
         self.show_third_party = show_third_party
         self.show_stdlib = show_stdlib
+        self.show_unknown = show_unknown
         self.include_all = include_all
-        
-        # Merge default exclusions with user-specified ones
+
+    @staticmethod
+    def _build_exclude_patterns(exclude_patterns: list[str] | None, include_all: bool) -> list[str]:
         user_patterns = exclude_patterns if exclude_patterns is not None else []
         if include_all:
-            # If include_all is True, only use user-specified patterns
-            self.exclude_patterns = user_patterns
-        else:
-            # Merge defaults with user patterns, avoiding duplicates
-            self.exclude_patterns = list(DEFAULT_EXCLUDE_PATTERNS)
-            for pattern in user_patterns:
-                if pattern not in self.exclude_patterns:
-                    self.exclude_patterns.append(pattern)
+            return list(user_patterns)
+        merged = list(DEFAULT_EXCLUDE_PATTERNS)
+        for pattern in user_patterns:
+            if pattern not in merged:
+                merged.append(pattern)
+        return merged
 
     def __repr__(self) -> str:
-        """Provides a developer-friendly string representation of the Config object."""
         return (
             f"{self.__class__.__name__}("
             f"project_path={self.project_path!r}, "
-            f"output_file={self.output_file!r}, "
-            f"output_format={self.output_format!r}, "
             f"exclude_patterns={self.exclude_patterns!r}, "
             f"show_third_party={self.show_third_party!r}, "
             f"show_stdlib={self.show_stdlib!r}, "
+            f"show_unknown={self.show_unknown!r}, "
             f"include_all={self.include_all!r}"
             ")"
         )
+
+
+class Config(AnalysisConfig):
+    """Backward-compatible alias for older callers that still pass output settings."""
+
+    def __init__(
+        self,
+        project_path: Path,
+        output_file: Path | None = None,
+        output_format: str = "png",
+        exclude_patterns: list[str] | None = None,
+        show_third_party: bool = True,
+        show_stdlib: bool = True,
+        show_unknown: bool = True,
+        include_all: bool = False,
+    ):
+        super().__init__(
+            project_path=project_path,
+            exclude_patterns=exclude_patterns,
+            show_third_party=show_third_party,
+            show_stdlib=show_stdlib,
+            show_unknown=show_unknown,
+            include_all=include_all,
+        )
+        self.output_file = output_file
+        self.output_format = output_format
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "depcycle"
-version = "0.2.5"
+version = "0.3.0"
 description = "Command-line tool to visualize Python project dependencies."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -12,7 +12,7 @@ license = { file = "LICENSE" }
 authors = [
   { name = "DepCycle Maintainers" }
 ]
-keywords = ["dependencies", "graphviz", "architecture", "visualization", "cli"]
+keywords = ["dependencies", "architecture", "visualization", "cli"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",
@@ -30,9 +30,7 @@ classifiers = [
   "Topic :: Software Development :: Testing",
   "Topic :: Utilities"
 ]
-dependencies = [
-  "graphviz>=0.20.0",
-]
+dependencies = []
 
 [dependency-groups]
 dev = [
@@ -56,4 +54,7 @@ include = ["depcycle*"]
 
 [tool.setuptools.package-data]
 depcycle = ["py.typed"]
+
+[tool.ruff]
+target-version = "py310"
 

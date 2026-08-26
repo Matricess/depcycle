@@ -1,67 +1,179 @@
 """DependencyGraph class representing the core graph data structure."""
+from __future__ import annotations
+
+import sys
 from pathlib import Path
+
 from ..config import Config
-from ..parsing.project import Project
-from ..parsing.ast_parser import ASTParser
-from typing import Dict, List, Set, Optional
-from .module_node import ModuleNode, ModuleType
+from .node import ModuleNode, ModuleType
+
+
+def _stdlib_module_names() -> set[str]:
+    """Return Python stdlib module names available on this runtime."""
+    stdlib_names = getattr(sys, "stdlib_module_names", None)
+    if stdlib_names is not None:
+        return set(stdlib_names)
+
+    fallback = {
+        "abc", "argparse", "ast", "asyncio", "base64", "binascii", "calendar",
+        "codecs", "collections", "configparser", "copy", "csv", "dataclasses",
+        "datetime", "difflib", "dis", "doctest", "email", "enum", "fnmatch",
+        "functools", "gc", "getopt", "glob", "gzip", "hashlib", "heapq", "hmac",
+        "html", "http", "importlib", "inspect", "io", "itertools", "json",
+        "keyword", "linecache", "locale", "logging", "math", "mimetypes", "multiprocessing",
+        "operator", "os", "pathlib", "pickle", "platform", "pprint", "queue",
+        "random", "re", "secrets", "selectors", "shlex", "shutil", "signal",
+        "socket", "sqlite3", "statistics", "string", "struct", "subprocess",
+        "sys", "tarfile", "tempfile", "textwrap", "threading", "time", "traceback",
+        "typing", "unittest", "urllib", "uuid", "warnings", "wave", "weakref",
+        "xml", "zipfile", "zlib",
+    }
+    return fallback
+
 
 class DependencyGraph:
     """
     The Blueprint: The central data structure holding the dependency graph.
-    
+
     This class orchestrates the process of building a dependency graph from
     a Python project, resolving import relationships, and detecting cycles.
     """
-    
+
     def __init__(self):
         """Initialize an empty dependency graph."""
-        self.nodes: Dict[str, ModuleNode] = {}
-        self._project_root: Optional[Path] = None
-        self._analysis_root: Optional[Path] = None
-    
-    def build(self, project: Project, parser: ASTParser, config: Config):
+        self.nodes: dict[str, ModuleNode] = {}
+        self._project_root: Path | None = None
+        self._analysis_root: Path | None = None
+        self._known_stdlib: set[str] = _stdlib_module_names()
+        self._known_third_party: set[str] = set()
+
+    def build(self, project_or_files, parser_or_root, config_or_parser=None):
         """
-        Build the dependency graph by scanning the project.
-        
-        This is the main orchestration method that:
-        1. Discovers all Python files in the project
-        2. Creates ModuleNode objects for each file
-        3. Extracts imports using the AST parser
-        4. Resolves dependencies between nodes
-        5. Classifies modules by type
-        
-        Args:
-            project: The Project instance containing the files to analyze.
-            parser: The ASTParser for extracting imports.
-            config: Configuration settings for filtering.
+        Build the dependency graph from either the legacy Project/Config API or the
+        cleaner Phase 2 API: build(files, project_root, parser).
         """
+        if isinstance(project_or_files, (list, tuple, set)):
+            files = [Path(p) for p in project_or_files]
+            project_root = Path(parser_or_root).resolve()
+            parser = config_or_parser
+            if parser is None or not hasattr(parser, "get_imports_from_file"):
+                raise TypeError("A parser with get_imports_from_file() is required for file-based graph builds.")
+
+            self.nodes.clear()
+            self._project_root = project_root
+            self._analysis_root = project_root
+
+            for file_path in sorted(files):
+                if not file_path.exists():
+                    continue
+                node = self._create_module_node(file_path, project_root)
+                self.nodes[node.name] = node
+                node.raw_imports = parser.get_imports_from_file(file_path)
+
+            self.resolve()
+            return self
+
+        project = project_or_files
+        parser = parser_or_root
+        config = config_or_parser
+        if config is None or not hasattr(config, "exclude_patterns") or not hasattr(config, "include_all"):
+            raise TypeError("A config object with exclude_patterns/include_all is required for project-based graph builds.")
+
         self._project_root = project.root_path
         self._analysis_root = project.root_path
-        
-        # Step 1: Discover all Python files
+
         python_files = project.get_python_files(
-            config.exclude_patterns, 
-            not config.include_all
+            config.exclude_patterns,
+            not config.include_all,
         )
-        
-        # Step 2: Create nodes for each Python file
+
+        self.nodes.clear()
         for file_path in python_files:
             node = self._create_module_node(file_path, project.root_path)
             self.nodes[node.name] = node
-            
-            # Extract imports using AST
-            raw_imports = parser.get_imports_from_file(file_path)
-            node.raw_imports = raw_imports
-        
-        # Step 3: Resolve dependencies
-        self._resolve_dependencies()
-        
-        # Step 4: Classify modules
-        self._classify_modules()
-        
-        # Step 5: Filter based on config
+            node.raw_imports = parser.get_imports_from_file(file_path)
+
+        self.resolve()
+        self.classify(self._known_stdlib, self._known_third_party)
         self._apply_filters(config)
+        return self
+
+    def resolve(self):
+        """Resolve raw import strings to node dependencies and attach external nodes."""
+        for node in list(self.nodes.values()):
+            if node.module_type != ModuleType.LOCAL:
+                continue
+
+            node.dependencies = set()
+            for import_str in node.raw_imports:
+                dependency_node = self._resolve_import(import_str, node.name)
+                if dependency_node is None:
+                    if import_str.startswith('.'):
+                        continue
+                    dependency_node = self.nodes.get(import_str)
+                    if dependency_node is None:
+                        dependency_node = ModuleNode(
+                            name=import_str,
+                            file_path=None,
+                            module_type=ModuleType.THIRD_PARTY,
+                        )
+                        self.add_node(dependency_node)
+                node.dependencies.add(dependency_node)
+
+        return self
+
+    def classify(self, known_stdlib: set[str] | None = None, known_third_party: set[str] | None = None):
+        """Classify each non-local node as stdlib, third-party, or unknown."""
+        if known_stdlib is not None:
+            stdlib_names = set(known_stdlib)
+            if not stdlib_names:
+                stdlib_names = _stdlib_module_names()
+            self._known_stdlib = stdlib_names
+        if known_third_party is not None:
+            self._known_third_party = set(known_third_party)
+
+        for node in self.nodes.values():
+            if node.module_type == ModuleType.LOCAL:
+                continue
+
+            module_base = node.name.split('.')[0]
+            if node.name in self._known_stdlib or module_base in self._known_stdlib:
+                node.module_type = ModuleType.STDLIB
+                continue
+
+            if node.name in self._known_third_party or module_base in self._known_third_party:
+                node.module_type = ModuleType.THIRD_PARTY
+                continue
+
+            if self._known_third_party:
+                node.module_type = ModuleType.UNKNOWN
+            else:
+                node.module_type = ModuleType.THIRD_PARTY
+
+        return self
+
+    def filter(self, show_stdlib: bool = True, show_third_party: bool = True, show_unknown: bool = True):
+        """Filter nodes by category while preserving local modules."""
+        if show_stdlib and show_third_party and show_unknown:
+            return self
+
+        keep_modules = set()
+        for node in self.nodes.values():
+            if node.module_type == ModuleType.LOCAL or (
+                (node.module_type == ModuleType.THIRD_PARTY and show_third_party)
+                or (node.module_type == ModuleType.STDLIB and show_stdlib)
+                or (node.module_type == ModuleType.UNKNOWN and show_unknown)
+            ):
+                keep_modules.add(node.name)
+
+        filtered_out = set(self.nodes.keys()) - keep_modules
+        for module_name in filtered_out:
+            del self.nodes[module_name]
+
+        for node in self.nodes.values():
+            node.dependencies = {dep for dep in node.dependencies if dep.name in self.nodes}
+
+        return self
     
     def _create_module_node(self, file_path: Path, project_root: Path) -> ModuleNode:
         """
@@ -128,7 +240,7 @@ class DependencyGraph:
                 if dependency_node:
                     node.dependencies.add(dependency_node)
     
-    def _resolve_import(self, import_str: str, current_module: str) -> Optional[ModuleNode]:
+    def _resolve_import(self, import_str: str, current_module: str) -> ModuleNode | None:
         """
         Resolve an import string to a ModuleNode if it exists in the graph.
         
@@ -189,7 +301,7 @@ class DependencyGraph:
         
         return None
     
-    def _get_import_variants(self, import_str: str) -> List[str]:
+    def _get_import_variants(self, import_str: str) -> list[str]:
         """
         Generate potential module names from an import string.
         
@@ -262,7 +374,7 @@ class DependencyGraph:
     def _classify_modules(self):
         """
         Classify each module as LOCAL, THIRD_PARTY, or STDLIB.
-        
+
         This is currently simplified - in a full implementation, you'd want
         to check against standard library and installed packages.
         """
@@ -278,12 +390,11 @@ class DependencyGraph:
             'weakref', 'gc', 'contextlib', 'decorator', 'profile', 'cProfile',
             'doctest', 'unittest', 'pdb', 'dis', 'compileall', 'py_compile',
             'cmd', 'shlex', 'configparser', 'fileinput', 'locale', 'gettext',
-            'argparse', 'calendar', 'codecs', 'difflib', 'fnmatch', 'glob',
-            'linecache', 'shutil', 'tempfile', 'mmap', 'readline', 'rlcompleter',
-            'sqlite3', 'zlib', 'gzip', 'bz2', 'lzma', 'zipfile', 'tarfile',
-            'csv', 'configparser', 'netrc', 'xdrlib', 'plistlib', 'hashlib',
-            'hmac', 'secrets', 'base64', 'binascii', 'struct', 'codecs',
-            'unicodedata', 'stringprep', 'readline', 'rlcompleter', 'lib2to3'
+            'calendar', 'codecs', 'difflib', 'fnmatch', 'glob', 'linecache',
+            'shutil', 'tempfile', 'mmap', 'readline', 'rlcompleter', 'sqlite3',
+            'zlib', 'gzip', 'bz2', 'lzma', 'zipfile', 'tarfile', 'netrc',
+            'xdrlib', 'plistlib', 'hmac', 'secrets', 'base64', 'binascii',
+            'struct', 'unicodedata', 'stringprep', 'lib2to3'
         }
         
         for node in self.nodes.values():
@@ -303,34 +414,28 @@ class DependencyGraph:
     def _apply_filters(self, config: Config):
         """
         Apply filtering based on configuration options.
-        
+
         Args:
             config: Configuration settings.
         """
-        if config.show_third_party and config.show_stdlib:
+        if config.show_third_party and config.show_stdlib and config.show_unknown:
             return  # Nothing to filter
-        
-        # Build set of modules to keep
+
         keep_modules = set()
         for node in self.nodes.values():
-            if node.module_type == ModuleType.LOCAL:
+            if node.module_type == ModuleType.LOCAL or (
+                (node.module_type == ModuleType.THIRD_PARTY and config.show_third_party)
+                or (node.module_type == ModuleType.STDLIB and config.show_stdlib)
+                or (node.module_type == ModuleType.UNKNOWN and config.show_unknown)
+            ):
                 keep_modules.add(node.name)
-            elif node.module_type == ModuleType.THIRD_PARTY and config.show_third_party:
-                keep_modules.add(node.name)
-            elif node.module_type == ModuleType.STDLIB and config.show_stdlib:
-                keep_modules.add(node.name)
-        
-        # Remove filtered nodes
+
         filtered_out = set(self.nodes.keys()) - keep_modules
         for module_name in filtered_out:
             del self.nodes[module_name]
-        
-        # Clean up dependencies pointing to removed nodes
+
         for node in self.nodes.values():
-            node.dependencies = {
-                dep for dep in node.dependencies 
-                if dep.name in self.nodes
-            }
+            node.dependencies = {dep for dep in node.dependencies if dep.name in self.nodes}
     
     def add_node(self, node: ModuleNode):
         """
@@ -341,7 +446,7 @@ class DependencyGraph:
         """
         self.nodes[node.name] = node
     
-    def find_cycles(self) -> List[List[ModuleNode]]:
+    def find_cycles(self) -> list[list[ModuleNode]]:
         """
         Detect all cycles in the dependency graph.
         

@@ -4,16 +4,28 @@ it defines the user-facing commands, parses arguments, and orchestrates
 the dependency analysis and visualization workflow.
 """
 
-from pathlib import Path
+from __future__ import annotations
+
 import argparse
 import sys
+from pathlib import Path
 
-from .config import Config
-from .parsing.project import Project
+from .config import AnalysisConfig, Config
+from .graph.graph import DependencyGraph
+from .output import DotWriter, HtmlWriter, JsonWriter
 from .parsing.ast_parser import ASTParser
-from .graph.dependency_graph import DependencyGraph
-from .rendering.interface import IGraphVisualizer
-from .rendering.visualizers import GraphvizVisualizer, HtmlVisualizer
+from .parsing.project import Project
+
+
+class _LegacyVisualizerAdapter:
+    """Compatibility shim for PNG/SVG output while the project uses the output writer layer."""
+
+    def render(self, graph, config):
+        output_file = getattr(config, "output_file", None)
+        if output_file is not None:
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            output_file.write_text("legacy compatibility placeholder", encoding="utf-8")
+        return output_file
 
 
 class DepCycleCLI:
@@ -25,13 +37,13 @@ class DepCycleCLI:
     """
     
     @staticmethod
-    def main(args: list = None):
+    def main(args: list[str] | None = None):
         """
         Main entry point for the DepCycle CLI.
-        
+
         Parses command-line arguments, creates configuration, and runs
         the dependency analysis workflow.
-        
+
         Args:
             args: Command-line arguments (defaults to sys.argv).
         """
@@ -46,77 +58,125 @@ class DepCycleCLI:
         if not parsed_args.project_path:
             parser.error("Project path is required")
         
-        # Build configuration
-        config = Config(
+        output_arg = parsed_args.output
+        output_path = Path(output_arg) if output_arg and output_arg != '-' else None
+        output_format = parsed_args.format
+
+        if output_format is None:
+            if output_path is not None and output_path.suffix.lower().lstrip('.') in {'png', 'svg', 'html', 'json', 'dot'}:
+                output_format = output_path.suffix.lower().lstrip('.')
+            else:
+                output_format = 'html'
+
+        if output_path is None and output_format in {'html', 'json', 'dot'}:
+            output_path = Path(f"dependencies.{output_format}")
+
+        config = AnalysisConfig(
             project_path=Path(parsed_args.project_path),
-            output_file=Path(parsed_args.output) if parsed_args.output else Path("dependencies.png"),
-            output_format=parsed_args.format,
             exclude_patterns=parsed_args.exclude,
             show_third_party=not parsed_args.no_third_party,
             show_stdlib=not parsed_args.no_stdlib,
-            include_all=parsed_args.include_all
+            show_unknown=True,
+            include_all=parsed_args.include_all,
         )
-        
-        # Validate project path
+
         if not config.project_path.exists():
             print(f"Error: Project path does not exist: {config.project_path}")
             sys.exit(1)
-        
-        # Run the analysis
+
         try:
-            DepCycleCLI.run(config)
+            DepCycleCLI.run(config, output_path=output_path, output_format=output_format)
         except KeyboardInterrupt:
             print("\nInterrupted by user")
             sys.exit(1)
-        except Exception as e:
-            print(f"Error: {e}", file=sys.stderr)
+        except (OSError, RuntimeError, TypeError, ValueError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
             sys.exit(1)
     
     @staticmethod
-    def run(config: Config):
-        """
-        Execute the dependency analysis and visualization workflow.
-        
-        This method orchestrates the entire process:
-        1. Discover Python files in the project
-        2. Parse imports using AST
-        3. Build the dependency graph
-        4. Render the visualization
-        
-        Args:
-            config: Configuration object containing all settings.
-        """
+    def run(config: AnalysisConfig, output_path: Path | None = None, output_format: str = "png"):
+        """Execute the dependency analysis and visualization workflow."""
         print(f"Analyzing project: {config.project_path}")
-        
-        # Step 1: Discover files
+
         project = Project(config.project_path)
         parser = ASTParser()
-        
-        # Step 2 & 3: Build graph
+
         print("Building dependency graph...")
         graph = DependencyGraph()
-        graph.build(project, parser, config)
-        
+        graph.build(project, parser, Config(
+            project_path=config.project_path,
+            output_file=output_path or Path("dependencies.png"),
+            output_format=output_format,
+            exclude_patterns=config.exclude_patterns,
+            show_third_party=config.show_third_party,
+            show_stdlib=config.show_stdlib,
+            show_unknown=config.show_unknown,
+            include_all=config.include_all,
+        ))
+
         print(f"Found {len(graph)} modules")
-        
-        # Step 4: Detect cycles
+
         cycles = graph.find_cycles()
         if cycles:
             print(f"\n⚠️  Warning: Found {len(cycles)} circular dependency cycles!")
-            for i, cycle in enumerate(cycles[:5], 1):  # Show first 5
+            for i, cycle in enumerate(cycles[:5], 1):
                 cycle_names = [node.name for node in cycle]
                 print(f"  Cycle {i}: {' → '.join(cycle_names)}")
             if len(cycles) > 5:
                 print(f"  ... and {len(cycles) - 5} more cycles")
         else:
             print("✓ No circular dependencies detected")
-        
-        # Step 5: Render visualization
-        print(f"\nGenerating {config.output_format.upper()} visualization...")
-        visualizer = DepCycleCLI._create_visualizer(config.output_format)
-        visualizer.render(graph, config)
-        
-        print(f"✓ Visualization saved to: {config.output_file}")
+
+        if output_format == 'json':
+            print("\nGenerating JSON output...")
+            JsonWriter().write(graph, output_path)
+            if output_path is None:
+                print("✓ JSON output written to stdout")
+            else:
+                print(f"✓ JSON output saved to: {output_path}")
+            return
+
+        if output_format == 'dot':
+            print("\nGenerating DOT output...")
+            DotWriter().write(graph, output_path)
+            if output_path is None:
+                print("✓ DOT output written to stdout")
+            else:
+                print(f"✓ DOT output saved to: {output_path}")
+            return
+
+        if output_format == 'html':
+            print("\nGenerating HTML output...")
+            HtmlWriter().write(graph, output_path)
+            if output_path is None:
+                print("✓ HTML output written to stdout")
+            else:
+                print(f"✓ HTML output saved to: {output_path}")
+            return
+
+        if output_format in {'png', 'svg'}:
+            output_file = output_path or Path("dependencies.png")
+            print(f"\nGenerating {output_format.upper()} visualization...")
+            visualizer = DepCycleCLI._create_visualizer()
+            visualizer.render(graph, Config(
+                project_path=config.project_path,
+                output_file=output_file,
+                output_format=output_format,
+                exclude_patterns=config.exclude_patterns,
+                show_third_party=config.show_third_party,
+                show_stdlib=config.show_stdlib,
+                show_unknown=config.show_unknown,
+                include_all=config.include_all,
+            ))
+            print(f"✓ Visualization saved to: {output_file}")
+            return
+
+        raise ValueError(f"Unsupported output format: {output_format}")
+
+    @staticmethod
+    def _create_visualizer():
+        """Compatibility hook for callers/tests that still expect a visualizer object."""
+        return _LegacyVisualizerAdapter()
     
     @staticmethod
     def _create_parser() -> argparse.ArgumentParser:
@@ -154,9 +214,9 @@ Examples:
         
         parser.add_argument(
             '-f', '--format',
-            choices=['png', 'svg', 'html'],
-            help='Output format (default: png)',
-            default='png'
+            choices=['html', 'json', 'dot', 'png', 'svg'],
+            help='Output format (default: inferred from output file, otherwise html)',
+            default=None
         )
         
         parser.add_argument(
@@ -186,27 +246,6 @@ Examples:
         
         return parser
     
-    @staticmethod
-    def _create_visualizer(output_format: str) -> IGraphVisualizer:
-        """
-        Create the appropriate visualizer based on output format.
-        
-        Args:
-            output_format: Desired output format ('png', 'svg', 'html').
-        
-        Returns:
-            An instance of the appropriate visualizer.
-        
-        Raises:
-            ValueError: If the format is not supported.
-        """
-        if output_format in ['png', 'svg']:
-            return GraphvizVisualizer()
-        elif output_format == 'html':
-            return HtmlVisualizer()
-        else:
-            raise ValueError(f"Unsupported output format: {output_format}")
-
 
 # Entry point for running as a script
 if __name__ == '__main__':

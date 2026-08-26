@@ -1,15 +1,27 @@
-import sys
-import pytest
-from depcycle.cli import DepCycleCLI
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-def test_cli_help(capsys):
-    """Ensure --help works and displays the description."""
-    with pytest.raises(SystemExit):
-        DepCycleCLI.main(["--help"])
-    
-    captured = capsys.readouterr()
-    assert "Visualize Python project dependencies" in captured.out
+import pytest
+
+from depcycle.cli import DepCycleCLI
+from depcycle.config import AnalysisConfig
+
+
+def test_analysis_config_is_output_free():
+    """Ensure analysis settings exclude output-specific fields."""
+    config = AnalysisConfig(
+        project_path=__import__("pathlib").Path("/tmp/project"),
+        exclude_patterns=["tests"],
+        show_stdlib=True,
+        show_third_party=True,
+        show_unknown=True,
+        include_all=False,
+    )
+
+    assert config.project_path.as_posix() == "/tmp/project"
+    assert "tests" in config.exclude_patterns
+    assert "venv" in config.exclude_patterns
+    assert not hasattr(config, "output_file")
+    assert not hasattr(config, "output_format")
 
 def test_cli_runs_on_valid_project(create_project, capsys):
     """

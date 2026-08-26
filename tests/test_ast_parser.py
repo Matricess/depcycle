@@ -1,6 +1,7 @@
 import pytest
-import textwrap
+
 from depcycle.parsing.ast_parser import ASTParser
+
 
 @pytest.mark.parametrize("code,expected_imports", [
     ("import os", {"os"}),

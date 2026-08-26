@@ -1,7 +1,10 @@
 """Graph package containing the core dependency graph data structures."""
 
-from .module_node import ModuleNode, ModuleType
-from .dependency_graph import DependencyGraph
+from .graph import DependencyGraph
+from .node import ModuleNode, ModuleType
 
-__all__ = ["ModuleNode", "ModuleType", "DependencyGraph"]
-
+__all__ = [
+    "DependencyGraph",
+    "ModuleNode",
+    "ModuleType",
+]

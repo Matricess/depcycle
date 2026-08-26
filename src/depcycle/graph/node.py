@@ -1,20 +1,24 @@
+from __future__ import annotations
+
 from enum import Enum
 from pathlib import Path
-from typing import Set, Optional
+
 
 class ModuleType(Enum):
     """
     categorize a module class as being part of the local project,
-    a third party librart or the python standard library
+    a third party library, the Python standard library, or an unknown import.
     """
     LOCAL = "local"
     THIRD_PARTY = "third_party"
     STDLIB = "stdlib"
+    UNKNOWN = "unknown"
+
 
 class ModuleNode:
     """
     represents a single Python file (a module) as a node in the dependency graph.
-    
+
     attributes:
         name (str): The fully qualified Python name of the module (e.g., 'my_app.services.users').
         file_path (Optional[Path]): The absolute file system path to the .py file.
@@ -26,12 +30,12 @@ class ModuleNode:
                                            module directly depends on.
     """
 
-    def __init__(self, name: str, file_path: Optional[Path], module_type: ModuleType):
+    def __init__(self, name: str, file_path: Path | None, module_type: ModuleType):
         self.name: str = name
-        self.file_path: Optional[Path] = file_path
+        self.file_path: Path | None = file_path
         self.module_type: ModuleType = module_type
-        self.raw_imports: Set[str] = set()
-        self.dependencies: Set[ModuleNode] = set()
+        self.raw_imports: set[str] = set()
+        self.dependencies: set[ModuleNode] = set()
 
     def __repr__(self) -> str:
         """ provides a developer-friendly representation of the ModuleNode. """

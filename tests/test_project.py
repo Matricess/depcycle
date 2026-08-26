@@ -1,5 +1,6 @@
 from depcycle.parsing.project import Project
 
+
 def test_project_discovers_python_files_with_default_excludes(create_project):
     """Verify venv and node_modules are ignored by default."""
     tmp_path = create_project({

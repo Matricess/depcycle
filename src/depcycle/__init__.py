@@ -17,7 +17,6 @@ from .config import Config
 from .graph import DependencyGraph, ModuleNode, ModuleType
 from .output import DotWriter, HtmlWriter, IOutputWriter, JsonWriter
 from .parsing import ASTParser, Project
-from .rendering import GraphvizVisualizer, HtmlVisualizer, IGraphVisualizer
 
 __all__ = [
     'ASTParser',
@@ -25,10 +24,7 @@ __all__ = [
     'DepCycleCLI',
     'DependencyGraph',
     'DotWriter',
-    'GraphvizVisualizer',
-    'HtmlVisualizer',
     'HtmlWriter',
-    'IGraphVisualizer',
     'IOutputWriter',
     'JsonWriter',
     'ModuleNode',

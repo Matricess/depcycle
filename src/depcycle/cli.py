@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .config import AnalysisConfig, Config
 from .graph.graph import DependencyGraph
+from .output import JsonWriter
 from .parsing.ast_parser import ASTParser
 from .parsing.project import Project
 from .rendering.interface import IGraphVisualizer
@@ -46,7 +47,8 @@ class DepCycleCLI:
         if not parsed_args.project_path:
             parser.error("Project path is required")
         
-        output_path = Path(parsed_args.output) if parsed_args.output else Path("dependencies.png")
+        output_arg = parsed_args.output
+        output_path = Path(output_arg) if output_arg and output_arg != '-' else None
         output_format = parsed_args.format
 
         config = AnalysisConfig(
@@ -105,6 +107,15 @@ class DepCycleCLI:
         else:
             print("✓ No circular dependencies detected")
 
+        if output_format == 'json':
+            print("\nGenerating JSON output...")
+            JsonWriter().write(graph, output_path)
+            if output_path is None:
+                print("✓ JSON output written to stdout")
+            else:
+                print(f"✓ JSON output saved to: {output_path}")
+            return
+
         output_file = output_path or Path("dependencies.png")
         print(f"\nGenerating {output_format.upper()} visualization...")
         visualizer = DepCycleCLI._create_visualizer(output_format)
@@ -157,7 +168,7 @@ Examples:
         
         parser.add_argument(
             '-f', '--format',
-            choices=['png', 'svg', 'html'],
+            choices=['png', 'svg', 'html', 'json'],
             help='Output format (default: png)',
             default='png'
         )

@@ -1,8 +1,10 @@
 import sys
+from unittest.mock import MagicMock, patch
+
 import pytest
 from depcycle.cli import DepCycleCLI
 from depcycle.config import AnalysisConfig
-from unittest.mock import patch, MagicMock
+
 
 def test_analysis_config_is_output_free():
     """Ensure analysis settings exclude output-specific fields."""

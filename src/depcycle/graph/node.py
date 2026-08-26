@@ -1,15 +1,17 @@
 from enum import Enum
 from pathlib import Path
-from typing import Set, Optional
+from typing import Optional, Set
+
 
 class ModuleType(Enum):
     """
     categorize a module class as being part of the local project,
-    a third party librart or the python standard library
+    a third party library, the Python standard library, or an unknown import.
     """
     LOCAL = "local"
     THIRD_PARTY = "third_party"
     STDLIB = "stdlib"
+    UNKNOWN = "unknown"
 
 class ModuleNode:
     """

@@ -1,8 +1,34 @@
+import sys
+
 from depcycle.config import Config
 from depcycle.graph.graph import DependencyGraph
 from depcycle.graph.node import ModuleType
 from depcycle.parsing.ast_parser import ASTParser
 from depcycle.parsing.project import Project
+
+
+def test_phase2_unknown_classification_and_clean_api(create_project):
+    """Verify the graph API can classify unknown third-party imports without Config."""
+    tmp_path = create_project({
+        "pkg/main.py": "import os\nimport mystery_pkg\nimport requests",
+        "pkg/other.py": "from .main import mystery_pkg"
+    })
+
+    parser = ASTParser()
+    files = [tmp_path / "pkg" / "main.py", tmp_path / "pkg" / "other.py"]
+    graph = DependencyGraph()
+    graph.build(files, tmp_path, parser)
+    graph.resolve()
+
+    stdlib_names = getattr(sys, "stdlib_module_names", None)
+    if stdlib_names is None:
+        stdlib_names = set()
+    graph.classify(set(stdlib_names or []), {"requests"})
+
+    assert graph.nodes["pkg.main"].module_type == ModuleType.LOCAL
+    assert graph.nodes["os"].module_type == ModuleType.STDLIB
+    assert graph.nodes["requests"].module_type == ModuleType.THIRD_PARTY
+    assert graph.nodes["mystery_pkg"].module_type == ModuleType.UNKNOWN
 
 
 def test_cycle_detection(create_project):

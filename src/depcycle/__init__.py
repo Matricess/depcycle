@@ -15,7 +15,7 @@ except PackageNotFoundError:
 from .cli import DepCycleCLI
 from .config import Config
 from .graph import DependencyGraph, ModuleNode, ModuleType
-from .output import DotWriter, IOutputWriter, JsonWriter
+from .output import DotWriter, HtmlWriter, IOutputWriter, JsonWriter
 from .parsing import ASTParser, Project
 from .rendering import GraphvizVisualizer, HtmlVisualizer, IGraphVisualizer
 
@@ -27,6 +27,7 @@ __all__ = [
     'DotWriter',
     'GraphvizVisualizer',
     'HtmlVisualizer',
+    'HtmlWriter',
     'IGraphVisualizer',
     'IOutputWriter',
     'JsonWriter',

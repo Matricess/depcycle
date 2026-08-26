@@ -10,7 +10,7 @@ from pathlib import Path
 
 from .config import AnalysisConfig, Config
 from .graph.graph import DependencyGraph
-from .output import DotWriter, JsonWriter
+from .output import DotWriter, HtmlWriter, JsonWriter
 from .parsing.ast_parser import ASTParser
 from .parsing.project import Project
 from .rendering.interface import IGraphVisualizer
@@ -50,6 +50,15 @@ class DepCycleCLI:
         output_arg = parsed_args.output
         output_path = Path(output_arg) if output_arg and output_arg != '-' else None
         output_format = parsed_args.format
+
+        if output_format is None:
+            if output_path is not None and output_path.suffix.lower().lstrip('.') in {'png', 'svg', 'html', 'json', 'dot'}:
+                output_format = output_path.suffix.lower().lstrip('.')
+            else:
+                output_format = 'html'
+
+        if output_path is None and output_format in {'html', 'json', 'dot'}:
+            output_path = Path(f"dependencies.{output_format}")
 
         config = AnalysisConfig(
             project_path=Path(parsed_args.project_path),
@@ -125,6 +134,15 @@ class DepCycleCLI:
                 print(f"✓ DOT output saved to: {output_path}")
             return
 
+        if output_format == 'html':
+            print("\nGenerating HTML output...")
+            HtmlWriter().write(graph, output_path)
+            if output_path is None:
+                print("✓ HTML output written to stdout")
+            else:
+                print(f"✓ HTML output saved to: {output_path}")
+            return
+
         output_file = output_path or Path("dependencies.png")
         print(f"\nGenerating {output_format.upper()} visualization...")
         visualizer = DepCycleCLI._create_visualizer(output_format)
@@ -177,9 +195,9 @@ Examples:
         
         parser.add_argument(
             '-f', '--format',
-            choices=['png', 'svg', 'html', 'json', 'dot'],
-            help='Output format (default: png)',
-            default='png'
+            choices=['html', 'json', 'dot', 'png', 'svg'],
+            help='Output format (default: inferred from output file, otherwise html)',
+            default=None
         )
         
         parser.add_argument(

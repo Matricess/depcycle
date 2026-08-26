@@ -1,6 +1,5 @@
-from app.models import User  # Circular import!
+from app.repositories import save_order
 
 
-def validate_user(name):
-    User(name)  # This creates the cycle
-    return len(name) > 0
+def notify_customer(customer_id: str) -> None:
+    save_order(customer_id, "notification-audit")

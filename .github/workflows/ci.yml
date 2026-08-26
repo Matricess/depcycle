@@ -19,3 +19,6 @@ jobs:
 
       - name: Run tests
         run: uv run pytest -q
+
+      - name: Run pre-commit checks
+        run: uv run pre-commit run --all-files

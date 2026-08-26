@@ -1,9 +1,8 @@
-from app.services import UserService  # Circular import!
+from app.events import publish_order_event
 
 
-class User:
-    def __init__(self, name):
-        self.name = name
-    
-    def get_service(self):
-        return UserService()
+class Order:
+    def __init__(self, customer_id: str, sku: str):
+        self.customer_id = customer_id
+        self.sku = sku
+        publish_order_event(self)

@@ -1,5 +1,4 @@
-from app.models import User
+from app.api import checkout
 
-# This will actually cause import errors!
-user = User("test")
-print("Messy project with circular imports")
+if __name__ == "__main__":
+    print(checkout("customer-1042", "sku-laptop-15"))

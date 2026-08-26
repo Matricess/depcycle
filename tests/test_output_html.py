@@ -38,6 +38,20 @@ def test_html_writer_creates_self_contained_document(tmp_path):
     assert "d3" in html.lower()
     assert "app.main" in html
     assert "requests" in html
+    assert "/tmp/project" not in html
+    assert "project" in html
+    assert ".attr('id', 'arrow')" in html
+    assert "marker-end: url(#arrow)" in html
+    assert ".selectAll('path')" in html
+    assert "return 'M' + start.x + ',' + start.y + 'L' + end.x + ',' + end.y" in html
+    assert "forceX" in html
+    assert "cycle.slice(0, -1)" in html
+    assert "event.subject.fx" in html
+    assert "event.subject.fx = event.x" in html
+    assert "dblclick" in html
+    assert "event.subject.fx = event.x" in html
+    assert "panel-toggle" in html
+    assert "Show report panel" in html
 
 
 def test_html_writer_stdout_mode():

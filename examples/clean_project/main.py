@@ -1,5 +1,4 @@
-from app.services.user_service import UserService
+from app.orders.workflow import place_order
 
-service = UserService()
-user = service.create_user("test")
-print("Clean project with proper architecture")
+if __name__ == "__main__":
+    print(place_order("customer-1042", "sku-laptop-15"))

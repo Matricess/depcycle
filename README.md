@@ -1,9 +1,10 @@
 # DepCycle
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![CI](https://github.com/Matricess/depcycle/actions/workflows/ci.yml/badge.svg)](https://github.com/Matricess/depcycle/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Downloads](https://static.pepy.tech/badge/depcycle)](https://pepy.tech/project/depcycle)
-[![Downloads per month](https://img.shields.io/pypi/dm/depcycle.svg)](https://pypi.org/project/depcycle/)
+[![PyPI](https://img.shields.io/pypi/v/depcycle.svg)](https://pypi.org/project/depcycle/)
 
 DepCycle is a Python dependency analysis tool that inspects a project, builds a module graph, classifies imports, and emits browser-friendly or machine-friendly outputs for review.
 
@@ -51,6 +52,23 @@ depcycle /path/to/your/project -f json -o deps.json
 ```bash
 depcycle /path/to/your/project -f dot -o deps.dot
 ```
+
+### Example projects
+
+The repository includes three small projects for trying the analyzer:
+
+```bash
+uv run depcycle examples/clean_project -f html -o clean-project.html
+uv run depcycle examples/pipeline_project -f dot -o pipeline-project.dot
+uv run depcycle examples/messy_project -f json -o messy-project.json
+```
+
+`clean_project` is an e-commerce order flow with no cycles. `pipeline_project`
+models an analytics ingestion and reporting pipeline. `messy_project` contains
+an intentional checkout dependency cycle.
+
+HTML is the interactive browser report, JSON is the machine-readable report,
+and DOT is Graphviz-compatible directed graph text.
 
 ### Override the output destination
 
@@ -162,6 +180,17 @@ Run the suite with:
 ```bash
 uv run pytest -q
 ```
+
+Install the pre-commit hooks once, then run the same checks locally before
+committing:
+
+```bash
+uv run pre-commit install
+uv run pre-commit run --all-files
+```
+
+The hooks run Ruff and the full pytest suite. CI runs the same pre-commit
+checks on every push to `main` and every pull request.
 
 ## Contributing
 

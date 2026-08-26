@@ -1,9 +1,6 @@
-from app.models import User  # Circular import!
-from app.utils import validate_user  # Circular import!
+from app.repositories import save_order
 
 
-class UserService:
-    def create_user(self, name):
-        if validate_user(name):
-            return User(name)
-        return None
+def checkout_order(customer_id: str, sku: str) -> str:
+    order = save_order(customer_id, sku)
+    return f"created:{order.sku}"

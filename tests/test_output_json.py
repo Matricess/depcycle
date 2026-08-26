@@ -44,6 +44,9 @@ def test_json_writer_writes_expected_structure(tmp_path):
     assert payload["summary"]["unknown"] == 0
     assert len(payload["edges"]) == 3
     assert payload["nodes"][0]["id"]
+    assert payload["project"] == "project"
+    assert payload["nodes"][0]["file"] in {"app/main.py", "app/util.py"}
+    assert "/tmp/project" not in output_path.read_text(encoding="utf-8")
 
 
 def test_json_writer_writes_to_stdout_when_dest_is_none():

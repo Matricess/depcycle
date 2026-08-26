@@ -7,7 +7,7 @@ from pathlib import Path
 
 from ..graph.graph import DependencyGraph
 from ..graph.node import ModuleType
-from .base import IOutputWriter
+from .base import IOutputWriter, project_label, relative_file_path
 
 
 class JsonWriter(IOutputWriter):
@@ -30,7 +30,7 @@ class JsonWriter(IOutputWriter):
             nodes.append({
                 "id": node.name,
                 "type": node.module_type.value,
-                "file": str(node.file_path) if node.file_path else None,
+                "file": relative_file_path(graph, node.file_path) or None,
             })
 
         edges = []
@@ -55,7 +55,7 @@ class JsonWriter(IOutputWriter):
         }
 
         return {
-            "project": str(graph._project_root) if getattr(graph, "_project_root", None) else None,
+            "project": project_label(graph),
             "summary": summary,
             "nodes": nodes,
             "edges": edges,

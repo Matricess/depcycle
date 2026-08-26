@@ -1,26 +1,18 @@
-Examples for trying DepCycle quickly
+# Examples
 
-Contents
-- clean_project: No cycles, simple layered imports
-- messy_project: Intentional cycle between modules
+These projects are intentionally small but model familiar application shapes:
 
-How to run
-- From repo root (this folder):
+- `clean_project`: an e-commerce order flow across catalog, payments, shipping,
+	and domain packages. It has no circular dependencies.
+- `pipeline_project`: an analytics pipeline that ingests events, transforms
+	them, stores daily data, and produces a report.
+- `messy_project`: a checkout service where repositories, domain events, and
+	notifications form a cross-layer cycle.
 
-Clean (acyclic) graph, SVG:
+Run the CLI from the repository root:
+
 ```bash
-uv run depcycle "examples/clean_project" -o clean_deps.svg --format svg
+depcycle examples/clean_project -f html -o /tmp/clean-project.html
+depcycle examples/pipeline_project -f dot -o /tmp/pipeline-project.dot
+depcycle examples/messy_project -f json -o /tmp/messy-project.json
 ```
-
-Messy graph, SVG (shows cycle warning):
-```bash
-uv run depcycle "examples/messy_project" -o messy_deps.svg --format svg
-```
-
-Tips
-- Try adding or removing imports to see edges appear/disappear.
-- Move an import to function scope to break a cycle without changing structure.
-- Add -e "**/__pycache__" to ignore bytecode caches if present.
-
-
-

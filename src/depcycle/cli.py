@@ -10,7 +10,7 @@ from pathlib import Path
 
 from .config import AnalysisConfig, Config
 from .graph.graph import DependencyGraph
-from .output import JsonWriter
+from .output import DotWriter, JsonWriter
 from .parsing.ast_parser import ASTParser
 from .parsing.project import Project
 from .rendering.interface import IGraphVisualizer
@@ -116,6 +116,15 @@ class DepCycleCLI:
                 print(f"✓ JSON output saved to: {output_path}")
             return
 
+        if output_format == 'dot':
+            print("\nGenerating DOT output...")
+            DotWriter().write(graph, output_path)
+            if output_path is None:
+                print("✓ DOT output written to stdout")
+            else:
+                print(f"✓ DOT output saved to: {output_path}")
+            return
+
         output_file = output_path or Path("dependencies.png")
         print(f"\nGenerating {output_format.upper()} visualization...")
         visualizer = DepCycleCLI._create_visualizer(output_format)
@@ -168,7 +177,7 @@ Examples:
         
         parser.add_argument(
             '-f', '--format',
-            choices=['png', 'svg', 'html', 'json'],
+            choices=['png', 'svg', 'html', 'json', 'dot'],
             help='Output format (default: png)',
             default='png'
         )

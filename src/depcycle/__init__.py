@@ -13,13 +13,14 @@ except PackageNotFoundError:
     __version__ = "0.0.0"
 
 from .cli import DepCycleCLI
-from .config import Config
+from .config import AnalysisConfig, Config
 from .graph import DependencyGraph, ModuleNode, ModuleType
 from .output import DotWriter, HtmlWriter, IOutputWriter, JsonWriter
-from .parsing import ASTParser, Project
+from .parsing import ASTParser, PackageMetadataReader, Project
 
 __all__ = [
     'ASTParser',
+    'AnalysisConfig',
     'Config',
     'DepCycleCLI',
     'DependencyGraph',
@@ -29,5 +30,6 @@ __all__ = [
     'JsonWriter',
     'ModuleNode',
     'ModuleType',
+    'PackageMetadataReader',
     'Project',
 ]

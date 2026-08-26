@@ -1,44 +1,45 @@
 # Test Coverage Summary
 
-This directory contains the comprehensive test suite for DepCycle. The tests are designed to cover all **Key Functionalities** of the application, ensuring robustness, accuracy, and deployment readiness.
+This directory contains the project test suite for DepCycle. The tests cover parsing, graph logic, output writing, metadata detection, and CLI behavior.
 
-## Key Functionalities Covered
+## Coverage Areas
 
-### 1. CLI & Integration (End-to-End)
+### CLI and integration
 **File:** `tests/test_cli.py`
-* **Functionality Tested:** The application entry point, argument parsing, and workflow orchestration.
-* **Scenarios:**
-    * **Happy Path:** Running against a valid project to ensure artifacts are created.
-    * **Error Handling:** Graceful exit when provided invalid paths.
-    * **Mocking:** We use `unittest.mock` to simulate the Graphviz visualizer. This ensures tests pass in CI/CD environments even if the Graphviz binary is missing, making the suite robust and portable.
+- Valid project execution
+- Error handling for invalid paths
+- CLI compatibility checks for output generation
 
-### 2. Cycle Detection & Graph Logic
+### Graph logic and cycle detection
 **File:** `tests/test_dependency_graph.py`
-* **Functionality Tested:** Core algorithms for graph building and cycle detection.
-* **Scenarios:**
-    * **Cycle Detection:** Verifies the Depth-First Search (DFS) algorithm accurately detects circular dependency chains.
-    * **Dynamic Resolution:** Ensures external dependencies (like `requests` or `os`) are automatically detected and classified, preventing crashes.
-    * **Filtering:** Tests flags like `--no-stdlib` to ensure they effectively prune the graph.
+- Local dependency resolution
+- Stdlib / third-party / unknown classification
+- Cycle detection and filtering behavior
 
-### 3. Import Parsing Strategy
+### Import parsing
 **File:** `tests/test_ast_parser.py`
-* **Functionality Tested:** Extracting imports from Python source code using Abstract Syntax Trees (AST).
-* **Scenarios:**
-    * **Complex Imports:** Handling aliased (`import numpy as np`), relative (`from . import utils`), and absolute imports.
-    * **Resilience:** Ensuring the parser handles broken code (files with `SyntaxError`) gracefully without crashing the entire tool.
+- Absolute, relative, and aliased imports
+- Graceful handling of invalid Python files
 
-### 4. Project Discovery & Exclusion
+### Project discovery
 **File:** `tests/test_project.py`
-* **Functionality Tested:** File system traversal and exclusion logic.
-* **Assertion:** Verifies that high-noise directories (`venv`, `node_modules`, `__pycache__`) are excluded by default to optimize performance.
+- Recursive file scanning
+- Default exclusion of common noise directories
 
-## How to Run
-We use `pytest` for execution with a centralized `conftest.py` fixture configuration.
+### Output writers
+**Files:** `tests/test_output_json.py`, `tests/test_output_dot.py`, `tests/test_output_html.py`
+- JSON structure validation
+- DOT syntax validation
+- HTML generation checks
+
+### Metadata detection
+**File:** `tests/test_metadata.py`
+- `pyproject.toml` parsing
+- `requirements.txt` parsing
+
+## Run the suite
 
 ```bash
-# Install project and test dependencies
 uv sync
-
-# Run all tests (should pass 17/17)
-uv run pytest -v
+uv run pytest -q
 ```

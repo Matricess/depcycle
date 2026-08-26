@@ -1,10 +1,12 @@
 """DependencyGraph class representing the core graph data structure."""
 from pathlib import Path
+from typing import Dict, List, Optional, Set
+
 from ..config import Config
-from ..parsing.project import Project
 from ..parsing.ast_parser import ASTParser
-from typing import Dict, List, Set, Optional
-from .module_node import ModuleNode, ModuleType
+from ..parsing.project import Project
+from .node import ModuleNode, ModuleType
+
 
 class DependencyGraph:
     """

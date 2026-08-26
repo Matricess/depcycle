@@ -3,30 +3,24 @@
 from pathlib import Path
 from typing import Dict
 
-from .interface import IGraphVisualizer
-from ..graph.dependency_graph import DependencyGraph
-from ..graph.module_node import ModuleType
 from ..config import Config
+from ..graph.graph import DependencyGraph
+from ..graph.node import ModuleType
+from .interface import IGraphVisualizer
 
 
 class GraphvizVisualizer(IGraphVisualizer):
     """
     Visualizer using Graphviz to generate PNG/SVG images.
-    
-    This is the primary visualization backend for DepCycle, using the
-    graphviz Python library to create standard graph visualizations.
+
+    Temporary stub: the Graphviz dependency has been removed from this
+    project (see refactor/p1-foundation). This class is replaced by the
+    pure-Python output writers introduced in later refactor phases.
     """
-    
+
     def __init__(self):
         """Initialize the GraphvizVisualizer."""
-        try:
-            import graphviz
-            self.graphviz = graphviz
-        except ImportError:
-            raise ImportError(
-                "graphviz is required for PNG/SVG output. "
-                "Install it with: pip install graphviz"
-            )
+        self.graphviz = None
     
     def render(self, graph: DependencyGraph, config: Config):
         """

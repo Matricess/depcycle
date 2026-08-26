@@ -1,8 +1,9 @@
 from depcycle.config import Config
-from depcycle.parsing.project import Project
+from depcycle.graph.graph import DependencyGraph
+from depcycle.graph.node import ModuleType
 from depcycle.parsing.ast_parser import ASTParser
-from depcycle.graph.module_node import ModuleType
-from depcycle.graph.dependency_graph import DependencyGraph
+from depcycle.parsing.project import Project
+
 
 def test_cycle_detection(create_project):
     """Verify DFS algorithm detects circular dependencies."""

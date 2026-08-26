@@ -4,14 +4,14 @@ it defines the user-facing commands, parses arguments, and orchestrates
 the dependency analysis and visualization workflow.
 """
 
-from pathlib import Path
 import argparse
 import sys
+from pathlib import Path
 
 from .config import Config
-from .parsing.project import Project
+from .graph.graph import DependencyGraph
 from .parsing.ast_parser import ASTParser
-from .graph.dependency_graph import DependencyGraph
+from .parsing.project import Project
 from .rendering.interface import IGraphVisualizer
 from .rendering.visualizers import GraphvizVisualizer, HtmlVisualizer
 

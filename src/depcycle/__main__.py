@@ -4,4 +4,3 @@ from .cli import DepCycleCLI
 
 if __name__ == '__main__':
     DepCycleCLI.main()
-

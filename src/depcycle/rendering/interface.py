@@ -2,8 +2,8 @@
 
 from abc import ABC, abstractmethod
 
-from ..graph.dependency_graph import DependencyGraph
 from ..config import Config
+from ..graph.graph import DependencyGraph
 
 
 class IGraphVisualizer(ABC):

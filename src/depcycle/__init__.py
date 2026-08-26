@@ -10,7 +10,6 @@ from importlib.metadata import PackageNotFoundError, version
 try:
     __version__ = version("depcycle")
 except PackageNotFoundError:
-    # Package is not installed (e.g. running directly from source).
     __version__ = "0.0.0"
 
 from .cli import DepCycleCLI
@@ -20,15 +19,14 @@ from .parsing import ASTParser, Project
 from .rendering import GraphvizVisualizer, HtmlVisualizer, IGraphVisualizer
 
 __all__ = [
-    'DepCycleCLI',
+    'ASTParser',
     'Config',
+    'DepCycleCLI',
     'DependencyGraph',
+    'GraphvizVisualizer',
+    'HtmlVisualizer',
+    'IGraphVisualizer',
     'ModuleNode',
     'ModuleType',
     'Project',
-    'ASTParser',
-    'IGraphVisualizer',
-    'GraphvizVisualizer',
-    'HtmlVisualizer',
 ]
-

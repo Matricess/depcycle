@@ -8,7 +8,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from .config import Config
+from .config import AnalysisConfig, Config
 from .graph.graph import DependencyGraph
 from .parsing.ast_parser import ASTParser
 from .parsing.project import Project
@@ -46,25 +46,24 @@ class DepCycleCLI:
         if not parsed_args.project_path:
             parser.error("Project path is required")
         
-        # Build configuration
-        config = Config(
+        output_path = Path(parsed_args.output) if parsed_args.output else Path("dependencies.png")
+        output_format = parsed_args.format
+
+        config = AnalysisConfig(
             project_path=Path(parsed_args.project_path),
-            output_file=Path(parsed_args.output) if parsed_args.output else Path("dependencies.png"),
-            output_format=parsed_args.format,
             exclude_patterns=parsed_args.exclude,
             show_third_party=not parsed_args.no_third_party,
             show_stdlib=not parsed_args.no_stdlib,
-            include_all=parsed_args.include_all
+            show_unknown=True,
+            include_all=parsed_args.include_all,
         )
-        
-        # Validate project path
+
         if not config.project_path.exists():
             print(f"Error: Project path does not exist: {config.project_path}")
             sys.exit(1)
-        
-        # Run the analysis
+
         try:
-            DepCycleCLI.run(config)
+            DepCycleCLI.run(config, output_path=output_path, output_format=output_format)
         except KeyboardInterrupt:
             print("\nInterrupted by user")
             sys.exit(1)
@@ -73,50 +72,54 @@ class DepCycleCLI:
             sys.exit(1)
     
     @staticmethod
-    def run(config: Config):
-        """
-        Execute the dependency analysis and visualization workflow.
-        
-        This method orchestrates the entire process:
-        1. Discover Python files in the project
-        2. Parse imports using AST
-        3. Build the dependency graph
-        4. Render the visualization
-        
-        Args:
-            config: Configuration object containing all settings.
-        """
+    def run(config: AnalysisConfig, output_path: Path = None, output_format: str = "png"):
+        """Execute the dependency analysis and visualization workflow."""
         print(f"Analyzing project: {config.project_path}")
-        
-        # Step 1: Discover files
+
         project = Project(config.project_path)
         parser = ASTParser()
-        
-        # Step 2 & 3: Build graph
+
         print("Building dependency graph...")
         graph = DependencyGraph()
-        graph.build(project, parser, config)
-        
+        graph.build(project, parser, Config(
+            project_path=config.project_path,
+            output_file=output_path or Path("dependencies.png"),
+            output_format=output_format,
+            exclude_patterns=config.exclude_patterns,
+            show_third_party=config.show_third_party,
+            show_stdlib=config.show_stdlib,
+            show_unknown=config.show_unknown,
+            include_all=config.include_all,
+        ))
+
         print(f"Found {len(graph)} modules")
-        
-        # Step 4: Detect cycles
+
         cycles = graph.find_cycles()
         if cycles:
             print(f"\n⚠️  Warning: Found {len(cycles)} circular dependency cycles!")
-            for i, cycle in enumerate(cycles[:5], 1):  # Show first 5
+            for i, cycle in enumerate(cycles[:5], 1):
                 cycle_names = [node.name for node in cycle]
                 print(f"  Cycle {i}: {' → '.join(cycle_names)}")
             if len(cycles) > 5:
                 print(f"  ... and {len(cycles) - 5} more cycles")
         else:
             print("✓ No circular dependencies detected")
-        
-        # Step 5: Render visualization
-        print(f"\nGenerating {config.output_format.upper()} visualization...")
-        visualizer = DepCycleCLI._create_visualizer(config.output_format)
-        visualizer.render(graph, config)
-        
-        print(f"✓ Visualization saved to: {config.output_file}")
+
+        output_file = output_path or Path("dependencies.png")
+        print(f"\nGenerating {output_format.upper()} visualization...")
+        visualizer = DepCycleCLI._create_visualizer(output_format)
+        visualizer.render(graph, Config(
+            project_path=config.project_path,
+            output_file=output_file,
+            output_format=output_format,
+            exclude_patterns=config.exclude_patterns,
+            show_third_party=config.show_third_party,
+            show_stdlib=config.show_stdlib,
+            show_unknown=config.show_unknown,
+            include_all=config.include_all,
+        ))
+
+        print(f"✓ Visualization saved to: {output_file}")
     
     @staticmethod
     def _create_parser() -> argparse.ArgumentParser:

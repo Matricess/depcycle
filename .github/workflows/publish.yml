@@ -1,26 +1,35 @@
 name: Upload Python Package to PyPI (Trusted Publishing)
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*"
 
 jobs:
   pypi-publish:
-    environment: pypi 
-    
+    name: Build and publish package
     runs-on: ubuntu-latest
+    environment: pypi
+
     permissions:
-      id-token: write 
       contents: read
-    
+      id-token: write
+
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Check out tagged revision
+        uses: actions/checkout@v4
+
       - name: Set up uv
         uses: astral-sh/setup-uv@v6
 
-      - name: Build Source and Wheel distributions
-        run: uv build
+      - name: Build package
+        run: uv build --no-sources
+
+      - name: Verify package artifacts
+        run: |
+          test -f dist/depcycle-*.whl
+          test -f dist/depcycle-*.tar.gz
+          ls -lh dist/
 
       - name: Publish package to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1 
+        uses: pypa/gh-action-pypi-publish@release/v1

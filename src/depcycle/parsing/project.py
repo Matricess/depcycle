@@ -8,100 +8,107 @@ from pathlib import Path
 
 class Project:
     """
-    Represents a Python project being analyzed.
+    Represent a Python project being analyzed.
 
-    This class is responsible for discovering all Python files in a project
-    directory, respecting exclusion patterns.
-
-    Attributes:
-        root_path (Path): The absolute path to the project root directory.
+    This class is responsible only for discovering Python files and applying
+    the exclusion patterns supplied by the caller.
     """
 
-    def __init__(self, root_path: Path):
+    def __init__(self, root_path: Path | str) -> None:
         """
         Initialize a Project instance.
 
         Args:
-            root_path: Path to the project root directory.
+            root_path:
+                Path to the project root directory.
+
+        Raises:
+            ValueError:
+                If the project path does not exist or is not a directory.
         """
         self.root_path = Path(root_path).resolve()
+
         if not self.root_path.exists():
             raise ValueError(f"Project path does not exist: {root_path}")
+
         if not self.root_path.is_dir():
             raise ValueError(f"Project path is not a directory: {root_path}")
+
+    def _should_exclude(
+        self,
+        file_path: Path,
+        patterns: list[str],
+    ) -> bool:
+        """
+        Return whether a file matches any exclusion pattern.
+
+        Patterns may match:
+
+        - the file name,
+        - the complete path relative to the project root,
+        - any individual directory or file name in that relative path.
+        """
+        try:
+            relative_path = file_path.relative_to(
+                self.root_path,
+            )
+        except ValueError:
+            return True
+
+        relative_path_str = relative_path.as_posix()
+
+        for pattern in patterns:
+            if fnmatch.fnmatch(
+                file_path.name,
+                pattern,
+            ):
+                return True
+
+            if fnmatch.fnmatch(
+                relative_path_str,
+                pattern,
+            ):
+                return True
+
+            if any(
+                fnmatch.fnmatch(
+                    part,
+                    pattern,
+                )
+                for part in relative_path.parts
+            ):
+                return True
+
+        return False
 
     def get_python_files(
         self,
         exclude_patterns: list[str] | None = None,
-        include_defaults: bool = True,
     ) -> list[Path]:
         """
-        Discover all Python files in the project.
-
-        Recursively scans the project directory for .py files, excluding
-        directories and files that match any of the provided patterns.
+        Discover Python files in the project.
 
         Args:
-            exclude_patterns: Custom glob patterns to exclude (e.g., ['venv', '*.test.py']).
-                              Patterns can match file or directory names.
-            include_defaults: When True (default) also excludes common virtualenv,
-                              cache, and VCS directories that should never be parsed.
+            exclude_patterns:
+                Glob patterns supplied by the caller to exclude files or
+                directories.
 
         Returns:
-            List of absolute Path objects for each Python file found.
+            Sorted list of absolute paths to discovered Python files.
         """
-        exclude_patterns = exclude_patterns or []
-        if include_defaults:
-            default_excludes = [
-                "venv",
-                ".venv",
-                "env",
-                ".env",
-                "__pycache__",
-                ".git",
-                "site-packages",
-                "node_modules",
-                "dist",
-                "build",
-                ".mypy_cache",
-                ".pytest_cache",
-            ]
-            exclude_patterns = list(dict.fromkeys(default_excludes + exclude_patterns))
-        python_files: list[Path] = []
+        patterns = list(
+            dict.fromkeys(
+                exclude_patterns or [],
+            )
+        )
 
-        for py_file in self.root_path.rglob("*.py"):
-            if self._should_exclude(py_file, exclude_patterns):
-                continue
-            python_files.append(py_file)
+        python_files = [
+            py_file
+            for py_file in self.root_path.rglob("*.py")
+            if not self._should_exclude(
+                py_file,
+                patterns,
+            )
+        ]
 
-        return python_files
-
-    def _should_exclude(self, file_path: Path, patterns: list[str]) -> bool:
-        """
-        Check if a file should be excluded based on patterns.
-
-        Args:
-            file_path: The file path to check.
-            patterns: List of glob patterns.
-
-        Returns:
-            True if the file should be excluded, False otherwise.
-        """
-        try:
-            relative_path = file_path.relative_to(self.root_path)
-        except ValueError:
-            return True
-
-        for pattern in patterns:
-            if fnmatch.fnmatch(file_path.name, pattern):
-                return True
-
-            if fnmatch.fnmatch(str(relative_path).replace("\\", "/"), pattern):
-                return True
-
-            for part in relative_path.parts:
-                if fnmatch.fnmatch(part, pattern):
-                    return True
-
-        return False
-
+        return sorted(python_files)

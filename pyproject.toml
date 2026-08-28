@@ -1,42 +1,51 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "depcycle"
-version = "0.3.0"
+version = "1.0.0"
 description = "Command-line tool to visualize Python project dependencies."
 readme = "README.md"
-requires-python = ">=3.8"
-license = { file = "LICENSE" }
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+
 authors = [
-  { name = "DepCycle Maintainers" }
+    { name = "Matrices" },
 ]
-keywords = ["dependencies", "architecture", "visualization", "cli"]
+
+keywords = [
+    "dependencies",
+    "architecture",
+    "visualization",
+    "cli",
+]
+
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Environment :: Console",
-  "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Topic :: Software Development :: Build Tools",
-  "Topic :: Software Development :: Testing",
-  "Topic :: Utilities"
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Utilities",
 ]
-dependencies = []
+
+dependencies = [
+    "tomli>=2.0; python_version < '3.11'",
+]
 
 [dependency-groups]
 dev = [
-  "pre-commit>=3.0",
-  "pytest>=7.0",
-  "ruff>=0.11",
+    "pre-commit>=3.0",
+    "pytest>=7.0",
+    "ruff>=0.11",
 ]
 
 [project.urls]
@@ -48,15 +57,17 @@ Issues = "https://github.com/Matricess/depcycle/issues"
 depcycle = "depcycle.cli:DepCycleCLI.main"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["depcycle*"]
 
 [tool.setuptools.package-data]
-depcycle = ["py.typed"]
+depcycle = [
+    "py.typed",
+    "output/assets/*.js",
+]
 
 [tool.ruff]
 target-version = "py310"
-

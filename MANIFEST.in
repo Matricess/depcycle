@@ -1,0 +1,15 @@
+include LICENSE
+include README.md
+include pyproject.toml
+
+graft src/depcycle
+
+recursive-exclude src/depcycle __pycache__
+global-exclude *.py[cod]
+global-exclude *~
+global-exclude .DS_Store
+
+prune tests
+prune examples
+prune dist
+prune build

@@ -1,4 +1,4 @@
-"""ASTParser class for extracting import statements from Python files."""
+"""ASTParser class for extracting imported modules from Python files."""
 
 from __future__ import annotations
 
@@ -6,113 +6,118 @@ import ast
 from pathlib import Path
 
 
-class ASTParser:
-    """
-    A stateless utility using AST to find all raw import strings from a file.
-
-    This class uses Python's built-in ast module to safely parse Python files
-    and extract import statements without executing the code.
-    """
-
-    @staticmethod
-    def get_imports_from_file(file_path: Path) -> set[str]:
-        """
-        Extract all import statements from a Python file.
-
-        Parses the file using AST and collects:
-        - import module
-        - from module import ...
-        - import module as alias (returns original module)
-        - from module import item as alias (returns module.item)
-
-        Args:
-            file_path: Path to the Python file to parse.
-
-        Returns:
-            Set of import strings found in the file.
-
-        Raises:
-            SyntaxError: If the file contains invalid Python syntax.
-            FileNotFoundError: If the file doesn't exist.
-        """
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
-        except UnicodeDecodeError:
-            return set()
-
-        try:
-            tree = ast.parse(content, filename=str(file_path))
-        except SyntaxError:
-            return set()
-
-        visitor = _ImportVisitor()
-        visitor.visit(tree)
-        return visitor.imports
-
-
 class _ImportVisitor(ast.NodeVisitor):
     """
-    Internal AST visitor class for collecting import statements.
+    Internal AST visitor for collecting imported module names.
 
-    This class walks the AST and collects all import-related statements.
+    The visitor records module-level import targets. Imported symbols are
+    ignored except for bare relative imports, where each imported name may
+    itself be a local submodule.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the visitor with an empty imports set."""
         self.imports: set[str] = set()
 
-    def visit_Import(self, node: ast.Import):
+    def visit_Import(self, node: ast.Import) -> None:
         """
-        Visit a standard import statement.
+        Visit an ``import`` statement.
 
         Examples:
             import os -> adds "os"
+            import os.path -> adds "os.path"
             import os as operating_system -> adds "os"
             import os, sys -> adds "os", "sys"
         """
         for alias in node.names:
             self.imports.add(alias.name)
-        self.generic_visit(node)
 
-    def visit_ImportFrom(self, node: ast.ImportFrom):
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """
-        Visit a from-import statement.
+        Visit a ``from ... import ...`` statement.
+
+        For normal imports, only the module portion is recorded.
+
+        For bare relative imports such as ``from . import localmod``,
+        each imported name is recorded as a relative module candidate.
 
         Examples:
-            from os import path -> adds "os.path"
-            from os import path as p -> adds "os.path"
-            from os.path import join -> adds "os.path.join"
-            from . import local -> adds "."
+            from os import path -> adds "os"
+            from os.path import join -> adds "os.path"
+            from . import localmod -> adds ".localmod"
+            from . import a, b -> adds ".a", ".b"
+            from .utils import helper -> adds ".utils"
+            from .. import models -> adds "..models"
+            from ..models import User -> adds "..models"
             from .TimeAccount import TimeAccount -> adds ".TimeAccount"
+            from .sub import * -> adds ".sub"
+            from __future__ import annotations -> ignored
         """
-        if node.level > 0:
-            dots = "." * node.level
-            if node.module is None:
-                module_base = dots
-            else:
-                module_base = f"{dots}{node.module}"
+        if node.module == "__future__":
+            return
 
-            if module_base:
-                self.imports.add(module_base)
+        dots = "." * node.level
 
-            if node.names:
-                for alias in node.names:
-                    if alias.name == "*":
-                        continue
-                    if node.module is None:
-                        self.imports.add(f"{dots}{alias.name}")
-                    else:
-                        self.imports.add(f"{module_base}.{alias.name}")
-        else:
-            module_base = node.module or ""
+        if node.module is None:
+            if not dots:
+                return
 
-            if node.names:
-                for alias in node.names:
-                    full_name = f"{module_base}.{alias.name}"
-                    self.imports.add(full_name)
-            elif module_base:
-                self.imports.add(module_base)
+            for alias in node.names:
+                if alias.name == "*":
+                    continue
 
-        self.generic_visit(node)
+                self.imports.add(
+                    f"{dots}{alias.name}",
+                )
 
+            return
+
+        self.imports.add(
+            f"{dots}{node.module}",
+        )
+
+
+class ASTParser:
+    """
+    Stateless utility for extracting imported modules from Python files.
+
+    This class uses Python's built-in ``ast`` module to parse source code
+    without executing it.
+    """
+
+    @staticmethod
+    def get_imports_from_file(file_path: Path) -> set[str]:
+        """
+        Extract imported module names from a Python file.
+
+        Args:
+            file_path:
+                Path to the Python file to parse.
+
+        Returns:
+            Set of imported module names found in the file.
+
+        Raises:
+            FileNotFoundError:
+                If the file does not exist.
+            UnicodeDecodeError:
+                If the source cannot be decoded as UTF-8.
+            SyntaxError:
+                If the file contains invalid Python syntax.
+        """
+        with open(
+            file_path,
+            "r",
+            encoding="utf-8",
+        ) as file:
+            content = file.read()
+
+        tree = ast.parse(
+            content,
+            filename=str(file_path),
+        )
+
+        visitor = _ImportVisitor()
+        visitor.visit(tree)
+
+        return visitor.imports

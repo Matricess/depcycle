@@ -3,9 +3,10 @@ repos:
     hooks:
       - id: ruff
         name: ruff check
-        entry: uv run ruff check .
+        entry: uv run python -m ruff check src tests
         language: system
         pass_filenames: false
+
       - id: pytest
         name: pytest
         entry: uv run pytest -q

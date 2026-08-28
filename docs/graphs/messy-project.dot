@@ -1,0 +1,21 @@
+digraph depcycle {
+  rankdir=LR;
+  node [shape=box style="filled,rounded" fontname="Helvetica"];
+
+  "app" [fillcolor="#BBDEFB" color="#1E88E5" label="app"];
+  "app.api" [fillcolor="#BBDEFB" color="#1E88E5" label="app.api"];
+  "app.events" [fillcolor="#BBDEFB" color="#1E88E5" label="app.events"];
+  "app.models" [fillcolor="#BBDEFB" color="#1E88E5" label="app.models"];
+  "app.repositories" [fillcolor="#BBDEFB" color="#1E88E5" label="app.repositories"];
+  "app.services" [fillcolor="#BBDEFB" color="#1E88E5" label="app.services"];
+  "app.utils" [fillcolor="#BBDEFB" color="#1E88E5" label="app.utils"];
+  "main" [fillcolor="#BBDEFB" color="#1E88E5" label="main"];
+
+  "app.api" -> "app.services" [color="#444444" penwidth=1.2];
+  "app.events" -> "app.utils" [color="#D32F2F" penwidth=2.5];
+  "app.models" -> "app.events" [color="#D32F2F" penwidth=2.5];
+  "app.repositories" -> "app.models" [color="#D32F2F" penwidth=2.5];
+  "app.services" -> "app.repositories" [color="#444444" penwidth=1.2];
+  "app.utils" -> "app.repositories" [color="#D32F2F" penwidth=2.5];
+  "main" -> "app.api" [color="#444444" penwidth=1.2];
+}

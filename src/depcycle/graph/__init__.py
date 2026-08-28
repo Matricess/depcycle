@@ -1,4 +1,4 @@
-"""Graph package containing the core dependency graph data structures."""
+"""Core dependency graph structures and graph analysis utilities."""
 
 from .graph import DependencyGraph
 from .node import ModuleNode, ModuleType

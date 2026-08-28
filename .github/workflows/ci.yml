@@ -4,12 +4,15 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v4
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v6
@@ -19,6 +22,9 @@ jobs:
 
       - name: Run tests
         run: uv run pytest -q
+
+      - name: Run Ruff
+        run: uv run python -m ruff check src tests
 
       - name: Run pre-commit checks
         run: uv run pre-commit run --all-files

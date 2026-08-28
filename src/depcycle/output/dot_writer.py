@@ -3,26 +3,63 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import ClassVar
 
-from ..graph.graph import DependencyGraph
-from ..graph.node import ModuleType
-from .base import IOutputWriter
+from .base import GraphExport, IOutputWriter
 
 
 class DotWriter(IOutputWriter):
     """Serialize a dependency graph to Graphviz DOT syntax."""
 
-    def write(self, graph: DependencyGraph, dest: Path | None = None) -> None:
-        text = self._build_dot(graph)
+    _FILL: ClassVar[dict[str, str]] = {
+        "local": "#BBDEFB",
+        "third_party": "#FFE0B2",
+        "stdlib": "#EEEEEE",
+        "unknown": "#EDE7F6",
+    }
 
-        if dest is None:
-            print(text)
-            return
+    _COLOR: ClassVar[dict[str, str]] = {
+        "local": "#1E88E5",
+        "third_party": "#FB8C00",
+        "stdlib": "#6D6D6D",
+        "unknown": "#7E57C2",
+    }
 
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(text, encoding="utf-8")
+    @staticmethod
+    def _escape(value: str) -> str:
+        """
+        Escape a string for use inside a DOT quoted identifier or label.
 
-    def _build_dot(self, graph: DependencyGraph) -> str:
+        Args:
+            value: String to escape.
+
+        Returns:
+            DOT-safe escaped string.
+        """
+        return (
+            value.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("\r", "\\r")
+            .replace("\n", "\\n")
+        )
+
+    def _node_attributes(self, node_type: str) -> tuple[str, str]:
+        """Return fill and border colors for a node type."""
+        fill = self._FILL.get(node_type, "#F5F5F5")
+        color = self._COLOR.get(node_type, "#444444")
+
+        return fill, color
+
+    @staticmethod
+    def _edge_attributes(in_cycle: bool) -> tuple[str, str]:
+        """Return color and pen width for an edge."""
+        if in_cycle:
+            return "#D32F2F", "2.5"
+
+        return "#444444", "1.2"
+
+    def _build_dot(self, export: GraphExport) -> str:
+        """Build Graphviz DOT text from the canonical graph export."""
         lines = [
             "digraph depcycle {",
             "  rankdir=LR;",
@@ -30,44 +67,42 @@ class DotWriter(IOutputWriter):
             "",
         ]
 
-        cycle_names = set()
-        for cycle in graph.find_cycles():
-            for node in cycle:
-                cycle_names.add(node.name)
+        for node in export.nodes:
+            name = self._escape(node["id"])
+            fill, color = self._node_attributes(node["type"])
 
-        for node in sorted(graph.nodes.values(), key=lambda n: n.name):
-            label = node.name
-            escaped = label.replace('"', '\\"')
-            color = self._color_for(node.module_type)
-            fill = self._fill_for(node.module_type)
-            lines.append(f'  "{escaped}" [fillcolor="{fill}" color="{color}" label="{escaped}"];')
+            lines.append(
+                f'  "{name}" [fillcolor="{fill}" color="{color}" label="{name}"];'
+            )
 
         lines.append("")
-        for node in sorted(graph.nodes.values(), key=lambda n: n.name):
-            for dep in sorted(node.dependencies, key=lambda d: d.name):
-                edge_color = "#D32F2F" if node.name in cycle_names or dep.name in cycle_names else "#444444"
-                penwidth = "2.5" if edge_color == "#D32F2F" else "1.2"
-                lines.append(f'  "{node.name}" -> "{dep.name}" [color="{edge_color}" penwidth={penwidth}];')
+
+        for edge in export.edges:
+            source = self._escape(edge["source"])
+            target = self._escape(edge["target"])
+
+            edge_color, penwidth = self._edge_attributes(edge["in_cycle"])
+
+            lines.append(
+                f'  "{source}" -> "{target}" '
+                f'[color="{edge_color}" penwidth={penwidth}];'
+            )
 
         lines.append("}")
+
         return "\n".join(lines) + "\n"
 
-    @staticmethod
-    def _color_for(module_type: ModuleType) -> str:
-        mapping = {
-            ModuleType.LOCAL: "#1E88E5",
-            ModuleType.THIRD_PARTY: "#FB8C00",
-            ModuleType.STDLIB: "#6D6D6D",
-            ModuleType.UNKNOWN: "#7E57C2",
-        }
-        return mapping.get(module_type, "#444444")
+    def write(
+        self,
+        export: GraphExport,
+        dest: Path | None = None,
+    ) -> None:
+        """Write the DOT representation to stdout or a file."""
+        text = self._build_dot(export)
 
-    @staticmethod
-    def _fill_for(module_type: ModuleType) -> str:
-        mapping = {
-            ModuleType.LOCAL: "#BBDEFB",
-            ModuleType.THIRD_PARTY: "#FFE0B2",
-            ModuleType.STDLIB: "#EEEEEE",
-            ModuleType.UNKNOWN: "#EDE7F6",
-        }
-        return mapping.get(module_type, "#F5F5F5")
+        if dest is None:
+            print(text)
+            return
+
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(text, encoding="utf-8")

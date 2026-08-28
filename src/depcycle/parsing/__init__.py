@@ -1,8 +1,11 @@
-"""Parsing package containing file scanning and AST parsing logic."""
+"""Parsing utilities for project files, imports, and package metadata."""
 
 from .ast_parser import ASTParser
 from .metadata import PackageMetadataReader
 from .project import Project
 
-__all__ = ["ASTParser", "PackageMetadataReader", "Project"]
-
+__all__ = [
+    "ASTParser",
+    "PackageMetadataReader",
+    "Project",
+]

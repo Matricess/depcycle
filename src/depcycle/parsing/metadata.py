@@ -425,7 +425,14 @@ class PackageMetadataReader:
         self,
         project_root: Path,
     ) -> Iterable[Path]:
-        """Return metadata files that may contain dependency information."""
+        """
+        Return metadata files that may contain dependency information.
+
+        Supported files: ``pyproject.toml``, ``requirements.txt``,
+        ``requirements-*.txt``, ``setup.cfg``, ``setup.py``, ``Pipfile``.
+        ``uv.lock`` is not parsed despite earlier commit messages implying
+        otherwise; lockfile support may be added as a separate change.
+        """
         files = [
             project_root / "pyproject.toml",
             project_root / "requirements.txt",

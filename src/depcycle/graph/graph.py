@@ -497,6 +497,60 @@ class DependencyGraph:
 
         return result
 
+    def reachable_dependents(self, module_name: str) -> set[ModuleNode]:
+        """Return all modules that transitively depend on the named module."""
+        if module_name not in self.nodes:
+            return set()
+
+        visited: set[str] = set()
+        frontier = self.dependents(module_name)
+
+        while frontier:
+            next_frontier: list[ModuleNode] = []
+
+            for node in frontier:
+                if node.name in visited:
+                    continue
+
+                visited.add(node.name)
+                next_frontier.extend(self.dependents(node.name))
+
+            frontier = next_frontier
+
+        return {self.nodes[name] for name in visited}
+
+    def shortest_path(
+        self,
+        source: str,
+        target: str,
+    ) -> list[ModuleNode] | None:
+        """Return the shortest import chain from source to target, or None."""
+        if source not in self.nodes or target not in self.nodes:
+            return None
+
+        if source == target:
+            return [self.nodes[source]]
+
+        visited: set[str] = {source}
+        queue: list[list[ModuleNode]] = [[self.nodes[source]]]
+
+        while queue:
+            path = queue.pop(0)
+            current = path[-1]
+
+            for dependency in sorted(
+                current.dependencies,
+                key=lambda node: node.name,
+            ):
+                if dependency.name == target:
+                    return path + [dependency]
+
+                if dependency.name not in visited:
+                    visited.add(dependency.name)
+                    queue.append(path + [dependency])
+
+        return None
+
     def find_cycles(self) -> list[list[ModuleNode]]:
         """
         Detect circular dependencies using depth-first search.

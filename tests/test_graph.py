@@ -814,3 +814,154 @@ def test_neighborhood_returns_empty_set_for_unknown_module() -> None:
 
     assert graph.neighborhood("missing") == set()
 
+
+def test_reachable_dependents_includes_transitive_dependents(
+    tmp_path: Path,
+) -> None:
+    """Return every module that transitively depends on the target."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "app/api.py": {"app.service"},
+            "app/service.py": {"app.repository"},
+            "app/repository.py": {"app.db"},
+            "app/db.py": set(),
+            "app/unrelated.py": set(),
+        },
+    )
+
+    reachable = graph.reachable_dependents("app.db")
+
+    assert {node.name for node in reachable} == {
+        "app.repository",
+        "app.service",
+        "app.api",
+    }
+
+
+def test_reachable_dependents_returns_empty_set_when_none_depend_on_target(
+    tmp_path: Path,
+) -> None:
+    """Return an empty set when nothing transitively depends on the target."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "app/db.py": set(),
+        },
+    )
+
+    assert graph.reachable_dependents("app.db") == set()
+
+
+def test_reachable_dependents_returns_empty_set_for_unknown_module() -> None:
+    """Return an empty set for a module that is not in the graph."""
+    graph = DependencyGraph()
+
+    assert graph.reachable_dependents("missing") == set()
+
+
+def test_reachable_dependents_handles_cycles(
+    tmp_path: Path,
+) -> None:
+    """Do not loop forever when dependents form a cycle."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "app/a.py": {"app.b"},
+            "app/b.py": {"app.a"},
+        },
+    )
+
+    reachable = graph.reachable_dependents("app.a")
+
+    assert {node.name for node in reachable} == {"app.a", "app.b"}
+
+
+def test_shortest_path_returns_direct_chain(
+    tmp_path: Path,
+) -> None:
+    """Return the shortest import chain between two connected modules."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "app/api.py": {"app.service"},
+            "app/service.py": {"app.repository"},
+            "app/repository.py": set(),
+        },
+    )
+
+    path = graph.shortest_path("app.api", "app.repository")
+
+    assert [node.name for node in path] == [
+        "app.api",
+        "app.service",
+        "app.repository",
+    ]
+
+
+def test_shortest_path_prefers_shorter_route(
+    tmp_path: Path,
+) -> None:
+    """Return the shortest of multiple possible routes."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "app/api.py": {"app.service", "app.repository"},
+            "app/service.py": {"app.repository"},
+            "app/repository.py": set(),
+        },
+    )
+
+    path = graph.shortest_path("app.api", "app.repository")
+
+    assert [node.name for node in path] == [
+        "app.api",
+        "app.repository",
+    ]
+
+
+def test_shortest_path_returns_single_node_for_identical_source_and_target(
+    tmp_path: Path,
+) -> None:
+    """Return a single-node path when source and target are the same module."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "app/api.py": set(),
+        },
+    )
+
+    assert [node.name for node in graph.shortest_path("app.api", "app.api")] == [
+        "app.api",
+    ]
+
+
+def test_shortest_path_returns_none_when_disconnected(
+    tmp_path: Path,
+) -> None:
+    """Return None when no import path connects the two modules."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "app/api.py": set(),
+            "app/unrelated.py": set(),
+        },
+    )
+
+    assert graph.shortest_path("app.api", "app.unrelated") is None
+
+
+def test_shortest_path_returns_none_for_unknown_module(
+    tmp_path: Path,
+) -> None:
+    """Return None when either module name is missing from the graph."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "app/api.py": set(),
+        },
+    )
+
+    assert graph.shortest_path("app.api", "missing") is None
+    assert graph.shortest_path("missing", "app.api") is None
+

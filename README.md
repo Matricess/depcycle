@@ -60,7 +60,7 @@ depcycle --help
 Run DepCycle against a Python project:
 
 ```bash
-depcycle /path/to/your/project
+depcycle analyze /path/to/your/project
 ```
 
 By default, this creates:
@@ -74,7 +74,7 @@ Open that file in a browser to explore the dependency graph.
 You can also choose the output file explicitly:
 
 ```bash
-depcycle /path/to/your/project -o project-dependencies.html
+depcycle analyze /path/to/your/project -o project-dependencies.html
 ```
 
 ## Interactive HTML Report
@@ -112,7 +112,7 @@ Circular dependencies are highlighted directly in the graph so they are easy to 
 Generate an interactive HTML report:
 
 ```bash
-depcycle /path/to/your/project -f html -o dependencies.html
+depcycle analyze /path/to/your/project -f html -o dependencies.html
 ```
 
 This is the best format for visually exploring the dependency graph.
@@ -122,7 +122,7 @@ This is the best format for visually exploring the dependency graph.
 Generate machine-readable output:
 
 ```bash
-depcycle /path/to/your/project -f json -o dependencies.json
+depcycle analyze /path/to/your/project -f json -o dependencies.json
 ```
 
 The JSON report contains the project summary, nodes, edges, and detected cycles.
@@ -132,7 +132,7 @@ The JSON report contains the project summary, nodes, edges, and detected cycles.
 Generate a dependency graph in DOT format:
 
 ```bash
-depcycle /path/to/your/project -f dot -o dependencies.dot
+depcycle analyze /path/to/your/project -f dot -o dependencies.dot
 ```
 
 For example, DepCycle can produce DOT output like this:
@@ -194,19 +194,19 @@ By default, DepCycle shows local modules, standard-library modules, third-party 
 Hide third-party dependencies:
 
 ```bash
-depcycle /path/to/your/project --no-third-party
+depcycle analyze /path/to/your/project --no-third-party
 ```
 
 Hide standard-library modules:
 
 ```bash
-depcycle /path/to/your/project --no-stdlib
+depcycle analyze /path/to/your/project --no-stdlib
 ```
 
 You can combine these:
 
 ```bash
-depcycle /path/to/your/project \
+depcycle analyze /path/to/your/project \
   --no-third-party \
   --no-stdlib
 ```
@@ -230,7 +230,7 @@ tests
 You can add your own exclusion patterns:
 
 ```bash
-depcycle /path/to/your/project -e tests -e "generated/*.py"
+depcycle analyze /path/to/your/project -e tests -e "generated/*.py"
 ```
 
 You can specify `--exclude` multiple times.
@@ -238,7 +238,7 @@ You can specify `--exclude` multiple times.
 To disable the built-in exclusions and analyze everything except the patterns you explicitly provide:
 
 ```bash
-depcycle /path/to/your/project --include-all
+depcycle analyze /path/to/your/project --include-all
 ```
 
 ## Project Dependencies
@@ -263,13 +263,13 @@ DepCycle can infer the format from the output filename.
 For example:
 
 ```bash
-depcycle /path/to/your/project -o dependencies.json
+depcycle analyze /path/to/your/project -o dependencies.json
 ```
 
 produces JSON, while:
 
 ```bash
-depcycle /path/to/your/project -o dependencies.dot
+depcycle analyze /path/to/your/project -o dependencies.dot
 ```
 
 produces DOT.
@@ -279,7 +279,7 @@ Without an output extension or explicit format, HTML is used.
 You can always specify the format explicitly:
 
 ```bash
-depcycle /path/to/your/project \
+depcycle analyze /path/to/your/project \
   --format html \
   --output dependencies.html
 ```
@@ -289,7 +289,7 @@ depcycle /path/to/your/project \
 Use `-` as the output path to write the selected format to standard output:
 
 ```bash
-depcycle /path/to/your/project -f json -o -
+depcycle analyze /path/to/your/project -f json -o -
 ```
 
 This is useful when piping the output into another command or tool.
@@ -307,7 +307,7 @@ depcycle --help
 A simple workflow is:
 
 ```bash
-depcycle /path/to/your/project
+depcycle analyze /path/to/your/project
 ```
 
 Then open:
@@ -324,6 +324,36 @@ Start by looking for:
 4. External dependencies mixed into the graph
 
 Clicking a module lets you inspect its direct relationships and explore the surrounding part of the graph.
+
+## Query Interface
+
+Alongside `analyze`, DepCycle has a `query` subcommand that answers a single
+question about a project's dependency graph as compact JSON on stdout. This
+makes it easy to call DepCycle from scripts, or as a tool from an MCP/agent
+integration, without generating a full HTML/JSON/DOT report each time.
+
+```bash
+depcycle query /path/to/your/project module app.services.orders
+depcycle query /path/to/your/project deps app.services.orders
+depcycle query /path/to/your/project dependents app.services.orders
+depcycle query /path/to/your/project cycles --module app.services.orders
+depcycle query /path/to/your/project neighborhood app.services.orders --depth 2
+```
+
+Each command maps to one question:
+
+| Command                          | Question                                             |
+| --------------------------------- | ----------------------------------------------------- |
+| `query <path> module <name>`      | What is this module, and how connected is it?          |
+| `query <path> deps <name>`        | What does this module directly depend on?              |
+| `query <path> dependents <name>`  | What directly depends on this module?                   |
+| `query <path> cycles [--module]`  | What circular dependencies exist (optionally, touching one module)? |
+| `query <path> neighborhood <name> [--depth]` | What's nearby this module in the graph?      |
+
+Every `query` command prints one JSON object to stdout and exits non-zero
+with `{"error": "..."}` on stdout if the module is not found, so it can be
+composed with tools like `jq` or invoked as a function/tool by an
+MCP-compatible agent — no parsing of human-oriented HTML/text output required.
 
 ## Requirements
 

@@ -12,7 +12,7 @@ These projects are intentionally small but model familiar application shapes:
 Run the CLI from the repository root:
 
 ```bash
-depcycle examples/clean_project -f html -o /tmp/clean-project.html
-depcycle examples/pipeline_project -f dot -o /tmp/pipeline-project.dot
-depcycle examples/messy_project -f json -o /tmp/messy-project.json
+depcycle analyze examples/clean_project -f html -o /tmp/clean-project.html
+depcycle analyze examples/pipeline_project -f dot -o /tmp/pipeline-project.dot
+depcycle analyze examples/messy_project -f json -o /tmp/messy-project.json
 ```

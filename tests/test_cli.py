@@ -277,7 +277,7 @@ def test_main_can_write_json_to_stdout(
     capsys,
     tmp_path: Path,
 ) -> None:
-    """Write JSON directly to stdout when output is '-'."""
+    """Write clean JSON to stdout when output is '-', with no progress noise."""
     project = make_project(tmp_path)
 
     DepCycleCLI.main(
@@ -292,8 +292,15 @@ def test_main_can_write_json_to_stdout(
 
     captured = capsys.readouterr()
 
-    assert '"schema_version": 1' in captured.out
-    assert '"project"' in captured.out
+    # stdout must contain only valid JSON — no progress lines mixed in.
+    import json
+
+    parsed = json.loads(captured.out)
+    assert parsed["schema_version"] == 1
+    assert "project" in parsed
+
+    # Progress must have gone to stderr.
+    assert "Analyzing project:" in captured.err
 
 
 def test_main_uses_exclusion_patterns(
@@ -395,7 +402,7 @@ def test_run_reports_analysis_progress(
     capsys,
     tmp_path: Path,
 ) -> None:
-    """Print normal progress messages during analysis."""
+    """Print progress messages to stderr, not stdout."""
     project = make_project(tmp_path)
 
     output = tmp_path / "result.json"
@@ -414,12 +421,16 @@ def test_run_reports_analysis_progress(
 
     captured = capsys.readouterr()
 
-    assert "Analyzing project:" in captured.out
-    assert "Building dependency graph..." in captured.out
-    assert "Found " in captured.out
-    assert "No circular dependencies detected" in captured.out
-    assert "Generating JSON output..." in captured.out
-    assert "JSON output saved to:" in captured.out
+    # Progress belongs on stderr so stdout stays clean for machine consumers.
+    assert "Analyzing project:" in captured.err
+    assert "Building dependency graph..." in captured.err
+    assert "Found " in captured.err
+    assert "No circular dependencies detected" in captured.err
+    assert "Generating JSON output..." in captured.err
+    assert "JSON output saved to:" in captured.err
+
+    # stdout must be empty when writing to a file.
+    assert captured.out == ""
 
 
 def test_run_rejects_unsupported_format(
@@ -445,8 +456,9 @@ def test_run_rejects_unsupported_format(
 
 def test_main_handles_keyboard_interrupt(
     monkeypatch,
+    capsys,
 ) -> None:
-    """Exit cleanly when analysis is interrupted."""
+    """Exit cleanly when analysis is interrupted, printing to stderr."""
     monkeypatch.setattr(
         DepCycleCLI,
         "run",
@@ -459,6 +471,10 @@ def test_main_handles_keyboard_interrupt(
         )
 
     assert exc_info.value.code == 1
+
+    captured = capsys.readouterr()
+    assert "Interrupted by user" in captured.err
+    assert captured.out == ""
 
 
 def test_create_parser_rejects_invalid_format(

@@ -108,13 +108,13 @@ Examples:
         output_format: str = "html",
     ) -> None:
         """Execute the dependency analysis and visualization workflow."""
-        print(f"Analyzing project: {config.project_path}")
+        print(f"Analyzing project: {config.project_path}", file=sys.stderr)
 
         project = Project(config.project_path)
         parser = ASTParser()
         metadata_reader = PackageMetadataReader()
 
-        print("Building dependency graph...")
+        print("Building dependency graph...", file=sys.stderr)
 
         graph = DependencyGraph()
 
@@ -142,21 +142,21 @@ Examples:
             show_unknown=config.show_unknown,
         )
 
-        print(f"Found {len(graph)} modules")
+        print(f"Found {len(graph)} modules", file=sys.stderr)
 
         cycles = graph.find_cycles()
 
         if cycles:
-            print(f"\n⚠️  Warning: Found {len(cycles)} circular dependency cycles!")
+            print(f"\n⚠️  Warning: Found {len(cycles)} circular dependency cycles!", file=sys.stderr)
 
             for i, cycle in enumerate(cycles[:5], start=1):
                 cycle_names = [node.name for node in cycle]
-                print(f"  Cycle {i}: {' → '.join(cycle_names)}")
+                print(f"  Cycle {i}: {' → '.join(cycle_names)}", file=sys.stderr)
 
             if len(cycles) > 5:
-                print(f"  ... and {len(cycles) - 5} more cycles")
+                print(f"  ... and {len(cycles) - 5} more cycles", file=sys.stderr)
         else:
-            print("✓ No circular dependencies detected")
+            print("✓ No circular dependencies detected", file=sys.stderr)
 
         writer_cls = _WRITERS.get(output_format)
 
@@ -168,7 +168,7 @@ Examples:
             cycles=cycles,
         )
 
-        print(f"\nGenerating {output_format.upper()} output...")
+        print(f"\nGenerating {output_format.upper()} output...", file=sys.stderr)
 
         writer_cls().write(
             export,
@@ -179,7 +179,7 @@ Examples:
             "written to stdout" if output_path is None else f"saved to: {output_path}"
         )
 
-        print(f"✓ {output_format.upper()} output {label}")
+        print(f"✓ {output_format.upper()} output {label}", file=sys.stderr)
 
     @staticmethod
     def main(args: list[str] | None = None) -> None:
@@ -250,7 +250,7 @@ Examples:
                 output_format=output_format,
             )
         except KeyboardInterrupt:
-            print("\nInterrupted by user")
+            print("\nInterrupted by user", file=sys.stderr)
             sys.exit(1)
         except (
             OSError,

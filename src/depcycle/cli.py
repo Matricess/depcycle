@@ -111,6 +111,25 @@ Examples:
             default=None,
         )
 
+        parser.add_argument(
+            "--impact",
+            action="append",
+            help=(
+                "Module name to print an impact summary for "
+                "(direct/reachable dependents, direct deps, cycles touching it). "
+                "Can be specified multiple times."
+            ),
+            default=None,
+        )
+
+        parser.add_argument(
+            "--path",
+            nargs=2,
+            metavar=("SOURCE", "TARGET"),
+            help="Print the shortest import chain from SOURCE to TARGET.",
+            default=None,
+        )
+
         return parser
 
     @staticmethod
@@ -118,6 +137,8 @@ Examples:
         config: AnalysisConfig,
         output_path: Path | None = None,
         output_format: str = "html",
+        impact_targets: list[str] | None = None,
+        path_query: tuple[str, str] | None = None,
     ) -> None:
         """Execute the dependency analysis and visualization workflow."""
         print(f"Analyzing project: {config.project_path}", file=sys.stderr)
@@ -173,6 +194,12 @@ Examples:
         for target in config.targets:
             DepCycleCLI._print_target_summary(graph, cycles, target)
 
+        for module_name in impact_targets or []:
+            DepCycleCLI._print_impact_summary(graph, cycles, module_name)
+
+        if path_query is not None:
+            DepCycleCLI._print_path(graph, *path_query)
+
         writer_cls = _WRITERS.get(output_format)
 
         if writer_cls is None:
@@ -216,6 +243,50 @@ Examples:
         print(f"  Direct dependencies: {graph.fan_out(target)}", file=sys.stderr)
         print(f"  Direct dependents:   {graph.fan_in(target)}", file=sys.stderr)
         print(f"  Cycles involving:    {len(touching_cycles)}", file=sys.stderr)
+
+    @staticmethod
+    def _print_impact_summary(
+        graph: DependencyGraph,
+        cycles: list[list[ModuleNode]],
+        module_name: str,
+    ) -> None:
+        """Print an impact summary of a single module to stderr."""
+        print(f"\nImpact: {module_name}", file=sys.stderr)
+
+        if module_name not in graph.nodes:
+            print("  Not found in graph", file=sys.stderr)
+            return
+
+        touching_cycles = [
+            cycle for cycle in cycles if any(node.name == module_name for node in cycle)
+        ]
+
+        print(f"  Direct dependents:    {graph.fan_in(module_name)}", file=sys.stderr)
+        print(
+            f"  Reachable dependents: {len(graph.reachable_dependents(module_name))}",
+            file=sys.stderr,
+        )
+        print(f"  Direct dependencies:  {graph.fan_out(module_name)}", file=sys.stderr)
+        print(f"  Cycles involving:     {len(touching_cycles)}", file=sys.stderr)
+
+    @staticmethod
+    def _print_path(
+        graph: DependencyGraph,
+        source: str,
+        target: str,
+    ) -> None:
+        """Print the shortest import chain between two modules to stderr."""
+        path = graph.shortest_path(source, target)
+
+        if path is None:
+            print(f"\nPath: {source} → {target}", file=sys.stderr)
+            print("  No import path found.", file=sys.stderr)
+            return
+
+        print(
+            f"\nPath: {' → '.join(node.name for node in path)}",
+            file=sys.stderr,
+        )
 
     @staticmethod
     def main(args: list[str] | None = None) -> None:
@@ -285,6 +356,10 @@ Examples:
                 config,
                 output_path=output_path,
                 output_format=output_format,
+                impact_targets=parsed_args.impact,
+                path_query=(
+                    tuple(parsed_args.path) if parsed_args.path is not None else None
+                ),
             )
         except KeyboardInterrupt:
             print("\nInterrupted by user", file=sys.stderr)

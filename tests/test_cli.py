@@ -130,6 +130,41 @@ def test_create_parser_accepts_target_flag(
     ]
 
 
+def test_create_parser_accepts_impact_flag(
+    tmp_path: Path,
+) -> None:
+    """Parse one or more --impact values."""
+    parser = DepCycleCLI._create_parser()
+
+    parsed = parser.parse_args(
+        [
+            str(tmp_path),
+            "--impact",
+            "app.models",
+        ],
+    )
+
+    assert parsed.impact == ["app.models"]
+
+
+def test_create_parser_accepts_path_flag(
+    tmp_path: Path,
+) -> None:
+    """Parse --path source and target values."""
+    parser = DepCycleCLI._create_parser()
+
+    parsed = parser.parse_args(
+        [
+            str(tmp_path),
+            "--path",
+            "app.api",
+            "app.repository",
+        ],
+    )
+
+    assert parsed.path == ["app.api", "app.repository"]
+
+
 def test_main_rejects_missing_project_path(
     capsys,
     tmp_path: Path,
@@ -439,6 +474,114 @@ def test_main_prints_not_found_for_unknown_target(
 
     assert "Target: does.not.exist" in captured.err
     assert "Not found in graph" in captured.err
+
+
+def test_main_prints_impact_summary_to_stderr(
+    capsys,
+    tmp_path: Path,
+) -> None:
+    """Print an impact summary for a resolvable --impact module."""
+    project = make_project(tmp_path)
+    destination = tmp_path / "result.json"
+
+    DepCycleCLI.main(
+        [
+            str(project),
+            "--impact",
+            "example.module",
+            "--format",
+            "json",
+            "--output",
+            str(destination),
+        ],
+    )
+
+    captured = capsys.readouterr()
+
+    assert "Impact: example.module" in captured.err
+    assert "Direct dependents:" in captured.err
+    assert "Reachable dependents:" in captured.err
+    assert "Direct dependencies:" in captured.err
+    assert "Cycles involving:" in captured.err
+    assert destination.is_file()
+
+
+def test_main_prints_not_found_for_unknown_impact_target(
+    capsys,
+    tmp_path: Path,
+) -> None:
+    """Print a not-found message for an --impact module missing from the graph."""
+    project = make_project(tmp_path)
+    destination = tmp_path / "result.json"
+
+    DepCycleCLI.main(
+        [
+            str(project),
+            "--impact",
+            "does.not.exist",
+            "--format",
+            "json",
+            "--output",
+            str(destination),
+        ],
+    )
+
+    captured = capsys.readouterr()
+
+    assert "Impact: does.not.exist" in captured.err
+    assert "Not found in graph" in captured.err
+
+
+def test_main_prints_shortest_path_to_stderr(
+    capsys,
+    tmp_path: Path,
+) -> None:
+    """Print the import chain for a connected --path pair."""
+    project = make_project(tmp_path)
+    destination = tmp_path / "result.json"
+
+    DepCycleCLI.main(
+        [
+            str(project),
+            "--path",
+            "example",
+            "example.module",
+            "--format",
+            "json",
+            "--output",
+            str(destination),
+        ],
+    )
+
+    captured = capsys.readouterr()
+
+    assert "Path: example → example.module" in captured.err
+
+
+def test_main_prints_no_path_found_for_disconnected_modules(
+    capsys,
+    tmp_path: Path,
+) -> None:
+    """Print a not-found message for a disconnected --path pair."""
+    project = make_project(tmp_path)
+    destination = tmp_path / "result.json"
+
+    DepCycleCLI.main(
+        [
+            str(project),
+            "--path",
+            "example.module",
+            "example",
+            "--format",
+            "json",
+            "--output",
+            str(destination),
+        ],
+    )
+
+    captured = capsys.readouterr()
+
+    assert "No import path found." in captured.err
 
 
 def test_main_honors_include_all_flag(

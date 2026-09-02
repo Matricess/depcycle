@@ -84,6 +84,36 @@ def test_build_ignores_src_directory_in_module_name(
     assert graph.nodes["depcycle.cli"].file_path == (tmp_path / "src/depcycle/cli.py")
 
 
+def test_build_ignores_src_directory_in_module_name_multi_level(
+    tmp_path: Path,
+) -> None:
+    """Resolve module names correctly for a deeply nested src/ layout."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "src/depcycle/__init__.py": set(),
+            "src/depcycle/parsing/__init__.py": set(),
+            "src/depcycle/parsing/ast_parser.py": {"depcycle.parsing.metadata"},
+            "src/depcycle/parsing/metadata.py": set(),
+        },
+    )
+
+    assert set(graph.nodes) == {
+        "depcycle",
+        "depcycle.parsing",
+        "depcycle.parsing.ast_parser",
+        "depcycle.parsing.metadata",
+    }
+
+    assert graph.nodes["depcycle.parsing.ast_parser"].dependencies == {
+        graph.nodes["depcycle.parsing.metadata"],
+    }
+
+    assert graph.nodes["depcycle.parsing.ast_parser"].file_path == (
+        tmp_path / "src/depcycle/parsing/ast_parser.py"
+    )
+
+
 def test_resolve_absolute_local_imports(
     tmp_path: Path,
 ) -> None:
@@ -196,6 +226,39 @@ def test_unresolved_relative_import_is_ignored(
     assert "depcycle.cli" in graph.nodes
     assert "depcycle.missing" not in graph.nodes
     assert graph.nodes["depcycle.cli"].dependencies == set()
+
+
+def test_from_import_of_local_submodule_records_package_not_submodule(
+    tmp_path: Path,
+) -> None:
+    """Document the known limitation of ``from package import submodule``.
+
+    ``ASTParser.visit_ImportFrom`` records only the module portion of a
+    ``from X import Y`` statement (see ast_parser.py), so when Y is itself a
+    local submodule of X, the raw import is "X", not "X.Y". resolve() then
+    correctly attaches the dependency to the package node "X" -- it has no
+    way to know the caller actually meant the submodule "X.Y". This is
+    current, expected behavior, not a bug to fix here.
+    """
+    graph = make_graph(
+        tmp_path,
+        {
+            "depcycle/__init__.py": set(),
+            "depcycle/parsing/__init__.py": set(),
+            "depcycle/parsing/ast_parser.py": set(),
+            # Simulates `from depcycle.parsing import ast_parser`, which
+            # ASTParser records as raw import "depcycle.parsing".
+            "depcycle/cli.py": {"depcycle.parsing"},
+        },
+    )
+
+    assert graph.nodes["depcycle.cli"].dependencies == {
+        graph.nodes["depcycle.parsing"],
+    }
+
+    assert graph.nodes["depcycle.parsing.ast_parser"] not in (
+        graph.nodes["depcycle.cli"].dependencies
+    )
 
 
 def test_import_variants_are_generated(

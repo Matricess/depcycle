@@ -108,6 +108,28 @@ def test_create_parser_accepts_visibility_flags(
     assert parsed.include_all is True
 
 
+def test_create_parser_accepts_target_flag(
+    tmp_path: Path,
+) -> None:
+    """Parse one or more --target values."""
+    parser = DepCycleCLI._create_parser()
+
+    parsed = parser.parse_args(
+        [
+            str(tmp_path),
+            "--target",
+            "app.models",
+            "--target",
+            "app.service",
+        ],
+    )
+
+    assert parsed.target == [
+        "app.models",
+        "app.service",
+    ]
+
+
 def test_main_rejects_missing_project_path(
     capsys,
     tmp_path: Path,
@@ -362,6 +384,61 @@ def test_main_honors_no_stdlib_flag(
     )
 
     assert '"id": "json"' not in text
+
+
+def test_main_prints_focused_target_summary_to_stderr(
+    capsys,
+    tmp_path: Path,
+) -> None:
+    """Print a focused summary for a resolvable --target module."""
+    project = make_project(tmp_path)
+    destination = tmp_path / "result.json"
+
+    DepCycleCLI.main(
+        [
+            str(project),
+            "--target",
+            "example.module",
+            "--format",
+            "json",
+            "--output",
+            str(destination),
+        ],
+    )
+
+    captured = capsys.readouterr()
+
+    assert "Target: example.module" in captured.err
+    assert "Direct dependencies:" in captured.err
+    assert "Direct dependents:" in captured.err
+    assert "Cycles involving:" in captured.err
+    assert destination.is_file()
+
+
+def test_main_prints_not_found_for_unknown_target(
+    capsys,
+    tmp_path: Path,
+) -> None:
+    """Print a not-found message for a --target that is not in the graph."""
+    project = make_project(tmp_path)
+    destination = tmp_path / "result.json"
+
+    DepCycleCLI.main(
+        [
+            str(project),
+            "--target",
+            "does.not.exist",
+            "--format",
+            "json",
+            "--output",
+            str(destination),
+        ],
+    )
+
+    captured = capsys.readouterr()
+
+    assert "Target: does.not.exist" in captured.err
+    assert "Not found in graph" in captured.err
 
 
 def test_main_honors_include_all_flag(

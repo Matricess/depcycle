@@ -12,6 +12,7 @@ from pathlib import Path
 
 from .config import AnalysisConfig
 from .graph.graph import DependencyGraph
+from .graph.node import ModuleNode
 from .output import DotWriter, HtmlWriter, JsonWriter, build_export
 from .parsing.ast_parser import ASTParser
 from .parsing.metadata import PackageMetadataReader
@@ -99,6 +100,17 @@ Examples:
             ),
         )
 
+        parser.add_argument(
+            "--target",
+            action="append",
+            help=(
+                "Module name to print a focused summary for "
+                "(direct deps, direct dependents, cycles touching it). "
+                "Can be specified multiple times."
+            ),
+            default=None,
+        )
+
         return parser
 
     @staticmethod
@@ -158,6 +170,9 @@ Examples:
         else:
             print("✓ No circular dependencies detected", file=sys.stderr)
 
+        for target in config.targets:
+            DepCycleCLI._print_target_summary(graph, cycles, target)
+
         writer_cls = _WRITERS.get(output_format)
 
         if writer_cls is None:
@@ -180,6 +195,27 @@ Examples:
         )
 
         print(f"✓ {output_format.upper()} output {label}", file=sys.stderr)
+
+    @staticmethod
+    def _print_target_summary(
+        graph: DependencyGraph,
+        cycles: list[list[ModuleNode]],
+        target: str,
+    ) -> None:
+        """Print a focused summary of a single target module to stderr."""
+        print(f"\nTarget: {target}", file=sys.stderr)
+
+        if target not in graph.nodes:
+            print("  Not found in graph", file=sys.stderr)
+            return
+
+        touching_cycles = [
+            cycle for cycle in cycles if any(node.name == target for node in cycle)
+        ]
+
+        print(f"  Direct dependencies: {graph.fan_out(target)}", file=sys.stderr)
+        print(f"  Direct dependents:   {graph.fan_in(target)}", file=sys.stderr)
+        print(f"  Cycles involving:    {len(touching_cycles)}", file=sys.stderr)
 
     @staticmethod
     def main(args: list[str] | None = None) -> None:
@@ -241,6 +277,7 @@ Examples:
             show_stdlib=not parsed_args.no_stdlib,
             show_unknown=True,
             include_all=parsed_args.include_all,
+            targets=parsed_args.target,
         )
 
         try:

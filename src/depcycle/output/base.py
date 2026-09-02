@@ -43,6 +43,9 @@ class SummaryExport(TypedDict):
     third_party: int
     unknown: int
     cycles_found: int
+    max_fan_out: int
+    max_fan_in: int
+    isolated_modules: int
 
 
 @dataclass(frozen=True)

@@ -17,7 +17,7 @@ class JsonWriter(IOutputWriter):
         dest: Path | None = None,
     ) -> None:
         payload = {
-            "schema_version": 1,
+            "schema_version": 2,
             "project": export.project,
             "summary": export.summary,
             "nodes": export.nodes,

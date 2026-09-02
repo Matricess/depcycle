@@ -37,6 +37,9 @@ def test_build_export_empty_graph() -> None:
         "third_party": 0,
         "unknown": 0,
         "cycles_found": 0,
+        "max_fan_out": 0,
+        "max_fan_in": 0,
+        "isolated_modules": 0,
     }
 
 
@@ -150,6 +153,9 @@ def test_build_export_counts_node_types() -> None:
         "third_party": 1,
         "unknown": 1,
         "cycles_found": 0,
+        "max_fan_out": 0,
+        "max_fan_in": 0,
+        "isolated_modules": 4,
     }
 
 
@@ -431,3 +437,68 @@ def test_build_export_summary_matches_nodes_and_edges() -> None:
     assert export.summary["stdlib"] == 1
     assert export.summary["third_party"] == 1
     assert export.summary["unknown"] == 0
+
+
+def test_build_export_summary_max_fan_out_and_max_fan_in() -> None:
+    """Report the largest fan-out and fan-in values across all nodes."""
+    graph = DependencyGraph()
+
+    source = make_node(
+        "source",
+        ModuleType.LOCAL,
+        Path("/project/source.py"),
+    )
+    shared = make_node(
+        "shared",
+        ModuleType.LOCAL,
+        Path("/project/shared.py"),
+    )
+    other = make_node(
+        "other",
+        ModuleType.LOCAL,
+        Path("/project/other.py"),
+    )
+
+    # source depends on both shared and other -> fan_out(source) == 2
+    source.dependencies = {shared, other}
+    # other also depends on shared -> fan_in(shared) == 2
+    other.dependencies = {shared}
+
+    for node in (source, shared, other):
+        graph.add_node(node)
+
+    export = build_export(graph)
+
+    assert export.summary["max_fan_out"] == 2
+    assert export.summary["max_fan_in"] == 2
+
+
+def test_build_export_summary_counts_isolated_modules() -> None:
+    """Count modules with zero dependencies and zero dependents."""
+    graph = DependencyGraph()
+
+    connected_source = make_node(
+        "connected_source",
+        ModuleType.LOCAL,
+        Path("/project/connected_source.py"),
+    )
+    connected_target = make_node(
+        "connected_target",
+        ModuleType.LOCAL,
+        Path("/project/connected_target.py"),
+    )
+    isolated = make_node(
+        "isolated",
+        ModuleType.LOCAL,
+        Path("/project/isolated.py"),
+    )
+
+    connected_source.dependencies = {connected_target}
+
+    for node in (connected_source, connected_target, isolated):
+        graph.add_node(node)
+
+    export = build_export(graph)
+
+    assert export.summary["isolated_modules"] == 1
+

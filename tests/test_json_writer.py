@@ -46,7 +46,7 @@ def test_write_to_stdout(capsys) -> None:
 
     payload = json.loads(captured.out)
 
-    assert payload["schema_version"] == 1
+    assert payload["schema_version"] == 2
     assert payload["project"] == "project"
     assert payload["summary"]["total_modules"] == 2
     assert payload["summary"]["local"] == 1
@@ -74,7 +74,7 @@ def test_write_to_file(tmp_path: Path) -> None:
         )
     )
 
-    assert payload["schema_version"] == 1
+    assert payload["schema_version"] == 2
     assert payload["project"] == "project"
 
 

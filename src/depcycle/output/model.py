@@ -79,13 +79,19 @@ def build_export(
         "unknown": 0,
     }
 
+    fan_out_counts: dict[str, int] = {}
+    fan_in_counts: dict[str, int] = {node.name: 0 for node in sorted_nodes}
+
     for node in sorted_nodes:
         counts[node.module_type.value] += 1
+        fan_out_counts[node.name] = len(node.dependencies)
 
         for dependency in sorted(
             node.dependencies,
             key=lambda dep: dep.name,
         ):
+            fan_in_counts[dependency.name] = fan_in_counts.get(dependency.name, 0) + 1
+
             edge_exports.append(
                 {
                     "source": node.name,
@@ -98,6 +104,12 @@ def build_export(
                 }
             )
 
+    isolated_modules = sum(
+        1
+        for node in sorted_nodes
+        if fan_out_counts[node.name] == 0 and fan_in_counts.get(node.name, 0) == 0
+    )
+
     summary: SummaryExport = {
         "total_modules": len(sorted_nodes),
         "local": counts["local"],
@@ -105,6 +117,9 @@ def build_export(
         "third_party": counts["third_party"],
         "unknown": counts["unknown"],
         "cycles_found": len(cycle_exports),
+        "max_fan_out": max(fan_out_counts.values(), default=0),
+        "max_fan_in": max(fan_in_counts.values(), default=0),
+        "isolated_modules": isolated_modules,
     }
 
     return GraphExport(

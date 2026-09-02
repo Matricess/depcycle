@@ -196,7 +196,7 @@ def test_main_infers_json_format_from_output_suffix(
         encoding="utf-8",
     )
 
-    assert '"schema_version": 1' in text
+    assert '"schema_version": 2' in text
 
 
 def test_main_infers_dot_format_from_output_suffix(
@@ -270,7 +270,7 @@ def test_main_explicit_format_overrides_output_suffix(
         encoding="utf-8",
     )
 
-    assert '"schema_version": 1' in text
+    assert '"schema_version": 2' in text
 
 
 def test_main_can_write_json_to_stdout(
@@ -296,7 +296,7 @@ def test_main_can_write_json_to_stdout(
     import json
 
     parsed = json.loads(captured.out)
-    assert parsed["schema_version"] == 1
+    assert parsed["schema_version"] == 2
     assert "project" in parsed
 
     # Progress must have gone to stderr.

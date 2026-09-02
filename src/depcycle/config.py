@@ -90,7 +90,8 @@ class AnalysisConfig:
             include_all:
                 Whether to disable built-in exclusion patterns.
             targets:
-                Optional target modules for future focused analysis.
+                Used by ``--target`` in Stage 2. Reserved for focused-module
+                analysis. Not yet wired to the CLI.
         """
         self.project_path = Path(project_path)
 

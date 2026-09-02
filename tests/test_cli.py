@@ -1,5 +1,6 @@
 """Tests for the DepCycle command-line interface."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -25,8 +26,8 @@ def make_project(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def test_create_parser_requires_project_path() -> None:
-    """Require a positional project path."""
+def test_create_parser_requires_command() -> None:
+    """Require a subcommand (analyze or query)."""
     parser = DepCycleCLI._create_parser()
 
     with pytest.raises(SystemExit):
@@ -36,13 +37,14 @@ def test_create_parser_requires_project_path() -> None:
 def test_create_parser_accepts_project_path(
     tmp_path: Path,
 ) -> None:
-    """Parse the project path argument."""
+    """Parse the project path argument for the analyze subcommand."""
     parser = DepCycleCLI._create_parser()
 
     parsed = parser.parse_args(
-        [str(tmp_path)],
+        ["analyze", str(tmp_path)],
     )
 
+    assert parsed.command == "analyze"
     assert parsed.project_path == str(tmp_path)
 
 
@@ -54,6 +56,7 @@ def test_create_parser_accepts_output_options(
 
     parsed = parser.parse_args(
         [
+            "analyze",
             str(tmp_path),
             "--output",
             "result.json",
@@ -74,6 +77,7 @@ def test_create_parser_accepts_multiple_exclusions(
 
     parsed = parser.parse_args(
         [
+            "analyze",
             str(tmp_path),
             "--exclude",
             "tests",
@@ -96,6 +100,7 @@ def test_create_parser_accepts_visibility_flags(
 
     parsed = parser.parse_args(
         [
+            "analyze",
             str(tmp_path),
             "--no-third-party",
             "--no-stdlib",
@@ -116,6 +121,7 @@ def test_create_parser_accepts_target_flag(
 
     parsed = parser.parse_args(
         [
+            "analyze",
             str(tmp_path),
             "--target",
             "app.models",
@@ -138,6 +144,7 @@ def test_create_parser_accepts_impact_flag(
 
     parsed = parser.parse_args(
         [
+            "analyze",
             str(tmp_path),
             "--impact",
             "app.models",
@@ -155,6 +162,7 @@ def test_create_parser_accepts_path_flag(
 
     parsed = parser.parse_args(
         [
+            "analyze",
             str(tmp_path),
             "--path",
             "app.api",
@@ -174,7 +182,7 @@ def test_main_rejects_missing_project_path(
 
     with pytest.raises(SystemExit) as exc_info:
         DepCycleCLI.main(
-            [str(missing)],
+            ["analyze", str(missing)],
         )
 
     assert exc_info.value.code == 1
@@ -197,7 +205,7 @@ def test_main_rejects_file_as_project_path(
 
     with pytest.raises(SystemExit) as exc_info:
         DepCycleCLI.main(
-            [str(project_file)],
+            ["analyze", str(project_file)],
         )
 
     assert exc_info.value.code == 1
@@ -214,7 +222,7 @@ def test_main_defaults_to_html_output(
     project = make_project(tmp_path)
 
     DepCycleCLI.main(
-        [str(project)],
+        ["analyze", str(project)],
     )
 
     output = Path.cwd() / "dependencies.html"
@@ -241,6 +249,7 @@ def test_main_infers_json_format_from_output_suffix(
 
     DepCycleCLI.main(
         [
+            "analyze",
             str(project),
             "--output",
             str(destination),
@@ -265,6 +274,7 @@ def test_main_infers_dot_format_from_output_suffix(
 
     DepCycleCLI.main(
         [
+            "analyze",
             str(project),
             "--output",
             str(destination),
@@ -289,6 +299,7 @@ def test_main_defaults_to_html_for_unknown_output_suffix(
 
     DepCycleCLI.main(
         [
+            "analyze",
             str(project),
             "--output",
             str(destination),
@@ -313,6 +324,7 @@ def test_main_explicit_format_overrides_output_suffix(
 
     DepCycleCLI.main(
         [
+            "analyze",
             str(project),
             "--output",
             str(destination),
@@ -339,6 +351,7 @@ def test_main_can_write_json_to_stdout(
 
     DepCycleCLI.main(
         [
+            "analyze",
             str(project),
             "--format",
             "json",
@@ -350,8 +363,6 @@ def test_main_can_write_json_to_stdout(
     captured = capsys.readouterr()
 
     # stdout must contain only valid JSON — no progress lines mixed in.
-    import json
-
     parsed = json.loads(captured.out)
     assert parsed["schema_version"] == 2
     assert "project" in parsed
@@ -378,6 +389,7 @@ def test_main_uses_exclusion_patterns(
 
     DepCycleCLI.main(
         [
+            "analyze",
             str(project),
             "--exclude",
             "tests",
@@ -405,6 +417,7 @@ def test_main_honors_no_stdlib_flag(
 
     DepCycleCLI.main(
         [
+            "analyze",
             str(project),
             "--no-stdlib",
             "--format",
@@ -431,6 +444,7 @@ def test_main_prints_focused_target_summary_to_stderr(
 
     DepCycleCLI.main(
         [
+            "analyze",
             str(project),
             "--target",
             "example.module",
@@ -460,6 +474,7 @@ def test_main_prints_not_found_for_unknown_target(
 
     DepCycleCLI.main(
         [
+            "analyze",
             str(project),
             "--target",
             "does.not.exist",
@@ -486,6 +501,7 @@ def test_main_prints_impact_summary_to_stderr(
 
     DepCycleCLI.main(
         [
+            "analyze",
             str(project),
             "--impact",
             "example.module",
@@ -516,6 +532,7 @@ def test_main_prints_not_found_for_unknown_impact_target(
 
     DepCycleCLI.main(
         [
+            "analyze",
             str(project),
             "--impact",
             "does.not.exist",
@@ -542,6 +559,7 @@ def test_main_prints_shortest_path_to_stderr(
 
     DepCycleCLI.main(
         [
+            "analyze",
             str(project),
             "--path",
             "example",
@@ -568,6 +586,7 @@ def test_main_prints_no_path_found_for_disconnected_modules(
 
     DepCycleCLI.main(
         [
+            "analyze",
             str(project),
             "--path",
             "example.module",
@@ -602,6 +621,7 @@ def test_main_honors_include_all_flag(
 
     DepCycleCLI.main(
         [
+            "analyze",
             str(project),
             "--include-all",
             "--format",
@@ -687,7 +707,7 @@ def test_main_handles_keyboard_interrupt(
 
     with pytest.raises(SystemExit) as exc_info:
         DepCycleCLI.main(
-            ["."],
+            ["analyze", "."],
         )
 
     assert exc_info.value.code == 1
@@ -706,8 +726,181 @@ def test_create_parser_rejects_invalid_format(
     with pytest.raises(SystemExit):
         parser.parse_args(
             [
+                "analyze",
                 str(tmp_path),
                 "--format",
                 "yaml",
             ]
         )
+
+
+def test_create_parser_requires_query_subcommand(
+    tmp_path: Path,
+) -> None:
+    """Require one of the query sub-subcommands."""
+    parser = DepCycleCLI._create_parser()
+
+    with pytest.raises(SystemExit):
+        parser.parse_args(["query", str(tmp_path)])
+
+
+def test_query_module_prints_compact_json(
+    capsys,
+    tmp_path: Path,
+) -> None:
+    """Print compact JSON node info for `query module`."""
+    project = make_project(tmp_path)
+
+    DepCycleCLI.main(
+        ["query", str(project), "module", "example.module"],
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert payload == {
+        "module": "example.module",
+        "type": "local",
+        "file": "example/module.py",
+        "fan_in": 1,
+        "fan_out": 1,
+    }
+
+
+def test_query_module_reports_missing_module(
+    capsys,
+    tmp_path: Path,
+) -> None:
+    """Exit with an error for `query module` on an unknown module."""
+    project = make_project(tmp_path)
+
+    with pytest.raises(SystemExit) as exc_info:
+        DepCycleCLI.main(
+            ["query", str(project), "module", "does.not.exist"],
+        )
+
+    assert exc_info.value.code == 1
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert payload == {"error": "module not found: does.not.exist"}
+
+
+def test_query_deps_lists_direct_dependencies(
+    capsys,
+    tmp_path: Path,
+) -> None:
+    """Print compact JSON dependency list for `query deps`."""
+    project = make_project(tmp_path)
+
+    DepCycleCLI.main(
+        ["query", str(project), "deps", "example"],
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert payload == {
+        "module": "example",
+        "deps": ["example.module"],
+    }
+
+
+def test_query_dependents_lists_direct_dependents(
+    capsys,
+    tmp_path: Path,
+) -> None:
+    """Print compact JSON dependent list for `query dependents`."""
+    project = make_project(tmp_path)
+
+    DepCycleCLI.main(
+        ["query", str(project), "dependents", "example.module"],
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert payload == {
+        "module": "example.module",
+        "dependents": ["example"],
+    }
+
+
+def test_query_cycles_lists_all_cycles(
+    capsys,
+    tmp_path: Path,
+) -> None:
+    """Print compact JSON cycle list for `query cycles`."""
+    project = make_project(tmp_path)
+
+    DepCycleCLI.main(
+        ["query", str(project), "cycles"],
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert payload == {"cycles": []}
+
+
+def test_query_cycles_filters_by_module(
+    capsys,
+    tmp_path: Path,
+) -> None:
+    """Filter `query cycles` output to cycles touching --module."""
+    project = tmp_path
+    package = project / "app"
+    package.mkdir()
+
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "a.py").write_text("from . import b\n", encoding="utf-8")
+    (package / "b.py").write_text("from . import a\n", encoding="utf-8")
+
+    DepCycleCLI.main(
+        ["query", str(project), "cycles", "--module", "app.a"],
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert len(payload["cycles"]) == 1
+    assert "app.a" in payload["cycles"][0]
+
+
+def test_query_neighborhood_lists_nearby_modules(
+    capsys,
+    tmp_path: Path,
+) -> None:
+    """Print compact JSON neighborhood for `query neighborhood`."""
+    project = make_project(tmp_path)
+
+    DepCycleCLI.main(
+        ["query", str(project), "neighborhood", "example.module", "--depth", "1"],
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert payload == {
+        "module": "example.module",
+        "depth": 1,
+        "neighborhood": ["example", "json"],
+    }
+
+
+def test_query_rejects_missing_project_path(
+    capsys,
+    tmp_path: Path,
+) -> None:
+    """Exit with status one for a query against a missing project path."""
+    missing = tmp_path / "missing"
+
+    with pytest.raises(SystemExit) as exc_info:
+        DepCycleCLI.main(
+            ["query", str(missing), "module", "example"],
+        )
+
+    assert exc_info.value.code == 1
+
+    captured = capsys.readouterr()
+    assert f"Error: Project path does not exist: {missing}" in captured.err

@@ -125,7 +125,10 @@ Generate machine-readable output:
 depcycle analyze /path/to/your/project -f json -o dependencies.json
 ```
 
-The JSON report contains the project summary, nodes, edges, and detected cycles.
+The JSON report contains the project summary, nodes, edges, and detected
+cycles. The summary includes overall counts as well as `max_fan_out`,
+`max_fan_in`, and `isolated_modules` (modules with zero dependencies and zero
+dependents), useful as a quick health check for a project's structure.
 
 ### DOT
 
@@ -186,6 +189,49 @@ For example:
 ```
 
 The same cycle is highlighted in the HTML and DOT output.
+
+## Focused Analysis
+
+For a single module, print a focused summary to stderr while still
+generating the full requested output:
+
+```bash
+depcycle analyze /path/to/your/project --target app.services.orders
+```
+
+```text
+Target: app.services.orders
+  Direct dependencies: 8
+  Direct dependents:   7
+  Cycles involving:    1
+```
+
+To also see how many modules are transitively affected by a module (its
+full blast radius), use `--impact`:
+
+```bash
+depcycle analyze /path/to/your/project --impact app.services.orders
+```
+
+```text
+Impact: app.services.orders
+  Direct dependents:    7
+  Reachable dependents: 31
+  Direct dependencies:  8
+  Cycles involving:     1
+```
+
+To see how two modules are connected, use `--path`:
+
+```bash
+depcycle analyze /path/to/your/project --path app.api app.repositories.orders
+```
+
+```text
+Path: app.api → app.services → app.repositories.orders
+```
+
+All three flags can be combined with each other and with any output format.
 
 ## Filtering Dependencies
 
@@ -300,6 +346,8 @@ See all available options:
 
 ```bash
 depcycle --help
+depcycle analyze --help
+depcycle query --help
 ```
 
 ## Typical Workflow
@@ -329,8 +377,8 @@ Clicking a module lets you inspect its direct relationships and explore the surr
 
 Alongside `analyze`, DepCycle has a `query` subcommand that answers a single
 question about a project's dependency graph as compact JSON on stdout. This
-makes it easy to call DepCycle from scripts, or as a tool from an MCP/agent
-integration, without generating a full HTML/JSON/DOT report each time.
+makes it easy to call DepCycle from scripts or other tooling without
+generating a full HTML/JSON/DOT report each time.
 
 ```bash
 depcycle query /path/to/your/project module app.services.orders
@@ -352,8 +400,8 @@ Each command maps to one question:
 
 Every `query` command prints one JSON object to stdout and exits non-zero
 with `{"error": "..."}` on stdout if the module is not found, so it can be
-composed with tools like `jq` or invoked as a function/tool by an
-MCP-compatible agent — no parsing of human-oriented HTML/text output required.
+composed with tools like `jq` or called from other scripts — no parsing of
+human-oriented HTML/text output required.
 
 ## Requirements
 

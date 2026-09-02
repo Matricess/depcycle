@@ -308,13 +308,20 @@ class DependencyGraph:
                     if import_str.startswith("."):
                         continue
 
-                    dependency_node = ModuleNode(
-                        name=import_str,
-                        file_path=None,
-                        module_type=ModuleType.UNKNOWN,
-                    )
+                    # Reuse an existing node rather than creating a new object
+                    # and overwriting the dict entry.  This guarantees that
+                    # every reference to the same module name points to the
+                    # same canonical ModuleNode instance (one name → one object).
+                    if import_str not in self.nodes:
+                        self.add_node(
+                            ModuleNode(
+                                name=import_str,
+                                file_path=None,
+                                module_type=ModuleType.UNKNOWN,
+                            )
+                        )
 
-                    self.add_node(dependency_node)
+                    dependency_node = self.nodes[import_str]
 
                 node.dependencies.add(dependency_node)
 

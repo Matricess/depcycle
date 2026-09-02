@@ -554,3 +554,65 @@ def test_repr_reports_node_count() -> None:
     )
 
     assert repr(graph) == "DependencyGraph(nodes=1)"
+
+
+def test_resolve_reuses_canonical_external_node_object(
+    tmp_path: Path,
+) -> None:
+    """Multiple local modules importing the same external share one object.
+
+    This guards against the pre-S1-C2 bug where resolve() created a fresh
+    ModuleNode for each unresolved import, so the first local module's
+    dependencies set would hold a stale object after the second import
+    overwrote the dict entry.  The fix ensures one name → one instance.
+    """
+    graph = make_graph(
+        tmp_path,
+        {
+            "pkg/a.py": {"requests"},
+            "pkg/b.py": {"requests"},
+            "pkg/c.py": {"requests"},
+        },
+    )
+
+    # All three local modules must depend on requests.
+    node_a = graph.nodes["pkg.a"]
+    node_b = graph.nodes["pkg.b"]
+    node_c = graph.nodes["pkg.c"]
+
+    def dep_named(node, name):
+        return next(d for d in node.dependencies if d.name == name)
+
+    ref_from_a = dep_named(node_a, "requests")
+    ref_from_b = dep_named(node_b, "requests")
+    ref_from_c = dep_named(node_c, "requests")
+
+    canonical = graph.nodes["requests"]
+
+    # Every reference must be the *identical* object, not merely equal.
+    assert ref_from_a is canonical, "node_a holds a stale requests object"
+    assert ref_from_b is canonical, "node_b holds a stale requests object"
+    assert ref_from_c is canonical, "node_c holds a stale requests object"
+
+
+def test_resolve_canonical_node_survives_multiple_builds(
+    tmp_path: Path,
+) -> None:
+    """The canonical external node in the graph dict matches dependency refs."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "app/service.py": {"flask"},
+            "app/api.py": {"flask"},
+        },
+    )
+
+    flask_in_graph = graph.nodes["flask"]
+
+    for node in graph.nodes.values():
+        for dep in node.dependencies:
+            if dep.name == "flask":
+                assert dep is flask_in_graph, (
+                    f"{node.name} holds a non-canonical flask object"
+                )
+

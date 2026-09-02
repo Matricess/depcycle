@@ -679,3 +679,138 @@ def test_resolve_canonical_node_survives_multiple_builds(
                     f"{node.name} holds a non-canonical flask object"
                 )
 
+
+def test_fan_out_counts_direct_dependencies(
+    tmp_path: Path,
+) -> None:
+    """Report the number of direct dependencies of a module."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "app/service.py": {"app.models", "app.utils"},
+            "app/models.py": set(),
+            "app/utils.py": set(),
+        },
+    )
+
+    assert graph.fan_out("app.service") == 2
+    assert graph.fan_out("app.models") == 0
+
+
+def test_fan_out_returns_zero_for_unknown_module() -> None:
+    """Return zero fan-out for a module that does not exist in the graph."""
+    graph = DependencyGraph()
+
+    assert graph.fan_out("missing") == 0
+
+
+def test_dependents_returns_modules_that_directly_depend_on_target(
+    tmp_path: Path,
+) -> None:
+    """List every module that directly imports the named module."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "app/service.py": {"app.models"},
+            "app/api.py": {"app.models"},
+            "app/models.py": set(),
+        },
+    )
+
+    dependents = graph.dependents("app.models")
+
+    assert [node.name for node in dependents] == [
+        "app.api",
+        "app.service",
+    ]
+
+
+def test_dependents_returns_empty_list_when_none_depend_on_target(
+    tmp_path: Path,
+) -> None:
+    """Return an empty list when no module depends on the target."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "app/models.py": set(),
+        },
+    )
+
+    assert graph.dependents("app.models") == []
+
+
+def test_fan_in_counts_direct_dependents(
+    tmp_path: Path,
+) -> None:
+    """Report the number of modules that directly depend on this one."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "app/service.py": {"app.models"},
+            "app/api.py": {"app.models"},
+            "app/models.py": set(),
+        },
+    )
+
+    assert graph.fan_in("app.models") == 2
+    assert graph.fan_in("app.service") == 0
+
+
+def test_neighborhood_depth_one_includes_direct_neighbors_both_directions(
+    tmp_path: Path,
+) -> None:
+    """Include both dependencies and dependents at depth 1."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "app/service.py": {"app.models"},
+            "app/models.py": {"app.db"},
+            "app/db.py": set(),
+            "app/unrelated.py": set(),
+        },
+    )
+
+    neighborhood = graph.neighborhood("app.models", depth=1)
+
+    assert {node.name for node in neighborhood} == {
+        "app.service",
+        "app.db",
+    }
+
+
+def test_neighborhood_depth_two_reaches_second_hop(
+    tmp_path: Path,
+) -> None:
+    """Expand the neighborhood to include second-hop nodes at depth 2."""
+    graph = make_graph(
+        tmp_path,
+        {
+            "app/service.py": {"app.models"},
+            "app/models.py": {"app.db"},
+            "app/db.py": {"app.compat"},
+            "app/compat.py": set(),
+            "app/unrelated.py": set(),
+        },
+    )
+
+    neighborhood_depth_one = graph.neighborhood("app.models", depth=1)
+    neighborhood_depth_two = graph.neighborhood("app.models", depth=2)
+
+    assert {node.name for node in neighborhood_depth_one} == {
+        "app.service",
+        "app.db",
+    }
+    assert {node.name for node in neighborhood_depth_two} == {
+        "app.service",
+        "app.db",
+        "app.compat",
+    }
+    assert "app.unrelated" not in {node.name for node in neighborhood_depth_two}
+
+
+def test_neighborhood_returns_empty_set_for_unknown_module() -> None:
+    """Return an empty neighborhood for a module that is not in the graph."""
+    graph = DependencyGraph()
+
+    assert graph.neighborhood("missing") == set()
+

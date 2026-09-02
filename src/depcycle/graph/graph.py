@@ -438,6 +438,65 @@ class DependencyGraph:
         """Add a node to the graph."""
         self.nodes[node.name] = node
 
+    def fan_out(self, module_name: str) -> int:
+        """Number of direct dependencies of a module."""
+        node = self.nodes.get(module_name)
+
+        if node is None:
+            return 0
+
+        return len(node.dependencies)
+
+    def dependents(self, module_name: str) -> list[ModuleNode]:
+        """Return all modules that directly depend on the named module."""
+        return sorted(
+            (
+                node
+                for node in self.nodes.values()
+                if any(dependency.name == module_name for dependency in node.dependencies)
+            ),
+            key=lambda node: node.name,
+        )
+
+    def fan_in(self, module_name: str) -> int:
+        """Number of modules that directly depend on this one."""
+        return len(self.dependents(module_name))
+
+    def neighborhood(
+        self,
+        module_name: str,
+        depth: int = 1,
+    ) -> set[ModuleNode]:
+        """Return all nodes within `depth` hops of the named module (both directions)."""
+        start = self.nodes.get(module_name)
+
+        if start is None:
+            return set()
+
+        visited: set[str] = {start.name}
+        frontier: set[ModuleNode] = {start}
+        result: set[ModuleNode] = set()
+
+        for _ in range(depth):
+            next_frontier: set[ModuleNode] = set()
+
+            for node in frontier:
+                next_frontier.update(node.dependencies)
+                next_frontier.update(self.dependents(node.name))
+
+            next_frontier = {
+                node for node in next_frontier if node.name not in visited
+            }
+
+            if not next_frontier:
+                break
+
+            result.update(next_frontier)
+            visited.update(node.name for node in next_frontier)
+            frontier = next_frontier
+
+        return result
+
     def find_cycles(self) -> list[list[ModuleNode]]:
         """
         Detect circular dependencies using depth-first search.

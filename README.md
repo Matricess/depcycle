@@ -43,10 +43,12 @@ Install DepCycle from PyPI:
 pip install depcycle
 ```
 
-You can also use it through `uv`:
+Or install in a dedicated virtual environment using `venv`:
 
 ```bash
-uv tool install depcycle
+python3 -m venv .venv
+source .venv/bin/activate
+pip install depcycle
 ```
 
 Check the installation:
@@ -373,39 +375,64 @@ Start by looking for:
 
 Clicking a module lets you inspect its direct relationships and explore the surrounding part of the graph.
 
-## Query Interface
+## Inspect Interface
 
-Alongside `analyze`, DepCycle has a `query` subcommand that answers a single
-question about a project's dependency graph as compact JSON on stdout. This
-makes it easy to call DepCycle from scripts or other tooling without
-generating a full HTML/JSON/DOT report each time.
+Alongside `analyze`, DepCycle provides an `inspect` subcommand to query a project's dependency graph directly in your terminal as clean, machine-readable JSON.
 
 ```bash
-depcycle query /path/to/your/project module app.services.orders
-depcycle query /path/to/your/project deps app.services.orders
-depcycle query /path/to/your/project dependents app.services.orders
-depcycle query /path/to/your/project cycles --module app.services.orders
-depcycle query /path/to/your/project neighborhood app.services.orders --depth 2
+# Inspect a specific module
+depcycle inspect /path/to/your/project app.services.orders
+
+# Check for circular dependencies across the project
+depcycle inspect /path/to/your/project --cycles
 ```
 
-Each command maps to one question:
+## CI/CD Integration & Configuration
 
-| Command                          | Question                                             |
-| --------------------------------- | ----------------------------------------------------- |
-| `query <path> module <name>`      | What is this module, and how connected is it?          |
-| `query <path> deps <name>`        | What does this module directly depend on?              |
-| `query <path> dependents <name>`  | What directly depends on this module?                   |
-| `query <path> cycles [--module]`  | What circular dependencies exist (optionally, touching one module)? |
-| `query <path> neighborhood <name> [--depth]` | What's nearby this module in the graph?      |
+### Failing Builds on Circular Dependencies
 
-Every `query` command prints one JSON object to stdout and exits non-zero
-with `{"error": "..."}` on stdout if the module is not found, so it can be
-composed with tools like `jq` or called from other scripts — no parsing of
-human-oriented HTML/text output required.
+Use `--fail-on-cycles` in CI pipelines to prevent circular imports from being introduced:
+
+```bash
+depcycle analyze /path/to/your/project --fail-on-cycles
+```
+
+### Configuration via `pyproject.toml`
+
+You can configure default settings in your project's `pyproject.toml` under `[tool.depcycle]`:
+
+```toml
+[tool.depcycle]
+exclude = [
+    "tests/*",
+    "examples/*",
+    "docs/*",
+]
+show_third_party = true
+show_stdlib = true
+fail_on_cycles = false
+```
 
 ## Requirements
 
 DepCycle supports Python 3.10 and newer.
+
+## Development
+
+To set up a local development environment:
+
+```bash
+# Create a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Upgrade build tools and install in editable mode with dev extras
+pip install --upgrade pip setuptools build
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+```
 
 ## License
 

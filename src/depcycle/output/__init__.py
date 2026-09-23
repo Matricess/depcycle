@@ -5,6 +5,7 @@ from .dot_writer import DotWriter
 from .html_writer import HtmlWriter
 from .json_writer import JsonWriter
 from .model import build_export
+from .text_writer import TextWriter
 
 __all__ = [
     "DotWriter",
@@ -12,5 +13,6 @@ __all__ = [
     "HtmlWriter",
     "IOutputWriter",
     "JsonWriter",
+    "TextWriter",
     "build_export",
 ]

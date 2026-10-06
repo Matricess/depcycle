@@ -1,13 +1,16 @@
-"""Graph node models for DepCycle."""
+"""Graph node models for DepCycle using modern Python data classes."""
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 
+from .edge import Edge
 
-class ModuleType(Enum):
-    """Categorize a module as local, third-party, stdlib, or unknown."""
+
+class NodeType(Enum):
+    """Categorize a node as local, third-party, stdlib, or unknown."""
 
     LOCAL = "local"
     THIRD_PARTY = "third_party"
@@ -15,65 +18,46 @@ class ModuleType(Enum):
     UNKNOWN = "unknown"
 
 
-class ModuleNode:
+@dataclass(eq=False)
+class Node:
     """
-    Represent a Python module in the dependency graph.
+    Represent a Python module or package node in the dependency graph.
 
-    A module's fully qualified name is its graph identity. Two nodes with
-    the same module name therefore represent the same logical module,
-    regardless of their file paths or module types.
-
-    Attributes:
-        name:
-            Fully qualified Python name of the module, for example
-            ``my_app.services.users``. This is the unique identity of
-            the node within the graph.
-        file_path:
-            Absolute path to the module's source file. This is ``None``
-            for non-local modules and is informational rather than part
-            of node identity.
-        module_type:
-            Category of the module.
-        raw_imports:
-            Raw import strings extracted from the source file by ASTParser.
-        dependencies:
-            Other ModuleNode objects that this module directly depends on.
+    A node's fully qualified name serves as its unique graph identity.
     """
 
-    def __init__(
-        self,
-        name: str,
-        file_path: Path | None,
-        module_type: ModuleType,
-    ) -> None:
-        self.name: str = name
-        self.file_path: Path | None = file_path
-        self.module_type: ModuleType = module_type
-        self.raw_imports: set[str] = set()
-        self.dependencies: set[ModuleNode] = set()
+    name: str
+    file_path: Path | None = None
+    node_type: NodeType = NodeType.UNKNOWN
+    raw_imports: set[str] = field(default_factory=set)
+    outgoing_edges: set[Edge] = field(default_factory=set)
 
-    def __repr__(self) -> str:
-        """Provide a developer-friendly representation of the module node."""
-        return (
-            f"ModuleNode("
-            f"name={self.name!r}, "
-            f"type={self.module_type.name}, "
-            f"deps={len(self.dependencies)}"
-            ")"
-        )
+    @property
+    def dependencies(self) -> set[Node]:
+        """Convenience property returning target nodes directly from outgoing edges."""
+        return {edge.target for edge in self.outgoing_edges}
+
+    def add_dependency(self, target: Node) -> Edge:
+        """Create and add an outgoing edge to a target node."""
+        edge = Edge(source=self, target=target)
+        self.outgoing_edges.add(edge)
+        return edge
 
     def __eq__(self, other: object) -> bool:
-        """
-        Return True when two nodes represent the same module.
-
-        Module name is the sole identity of a graph node. File path and
-        module type do not affect equality.
-        """
-        if not isinstance(other, ModuleNode):
+        """Node name is the sole identity for graph node equality."""
+        if not isinstance(other, Node):
             return NotImplemented
-
         return self.name == other.name
 
     def __hash__(self) -> int:
-        """Return a hash based on the unique module name."""
+        """Hash based uniquely on the qualified node name."""
         return hash(self.name)
+
+    def __repr__(self) -> str:
+        return (
+            f"Node("
+            f"name={self.name!r}, "
+            f"type={self.node_type.name}, "
+            f"edges={len(self.outgoing_edges)}"
+            f")"
+        )

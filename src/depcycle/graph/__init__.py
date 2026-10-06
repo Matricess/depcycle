@@ -1,10 +1,12 @@
 """Core dependency graph structures and graph analysis utilities."""
 
-from .graph import DependencyGraph
-from .node import ModuleNode, ModuleType
+from .edge import Edge
+from .graph import Graph
+from .node import Node, NodeType
 
 __all__ = [
-    "DependencyGraph",
-    "ModuleNode",
-    "ModuleType",
+    "Edge",
+    "Graph",
+    "Node",
+    "NodeType",
 ]

@@ -2,53 +2,19 @@
 
 from __future__ import annotations
 
-import re
-import sys
+import collections
 from collections.abc import Iterator
 from pathlib import Path
 
 from .node import Node
 
 
-def _get_stdlib_names() -> set[str]:
-    """Retrieve standard library module names available on the current runtime."""
-    stdlib_names = getattr(sys, "stdlib_module_names", None)
-    if stdlib_names is not None:
-        return set(stdlib_names)
-
-    return {
-        "os",
-        "sys",
-        "pathlib",
-        "json",
-        "ast",
-        "re",
-        "math",
-        "collections",
-        "itertools",
-        "functools",
-        "typing",
-        "dataclasses",
-        "enum",
-        "logging",
-    }
-
-
 class Graph:
-    """
-    Central data structure holding the dependency graph and graph analytics.
-    """
+    """Central data structure holding the dependency graph and graph analytics."""
 
     def __init__(self) -> None:
         self.nodes: dict[str, Node] = {}
         self._project_root: Path | None = None
-        self._known_stdlib: set[str] = _get_stdlib_names()
-        self._known_third_party: set[str] = set()
-
-    @staticmethod
-    def _normalize_name(name: str) -> str:
-        """Normalize package or import name by treating -, _, and . as equivalent."""
-        return re.sub(r"[-_.]+", "-", name.strip().lower())
 
     def add_node(self, node: Node) -> None:
         """Add or update a node in the graph."""
@@ -61,7 +27,7 @@ class Graph:
     def fan_out(self, module_name: str) -> int:
         """Return the count of direct outgoing dependencies."""
         node = self.nodes.get(module_name)
-        return len(node.outgoing_edges) if node else 0
+        return len(node.dependencies) if node else 0
 
     def dependents(self, module_name: str) -> list[Node]:
         """Return all nodes that directly depend on the specified node."""
@@ -87,10 +53,10 @@ class Graph:
             return [self.nodes[source]]
 
         visited: set[str] = {source}
-        queue: list[list[Node]] = [[self.nodes[source]]]
+        queue = collections.deque([[self.nodes[source]]])
 
         while queue:
-            path = queue.pop(0)
+            path = queue.popleft()
             current = path[-1]
 
             for dep in sorted(current.dependencies, key=lambda n: n.name):

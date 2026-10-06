@@ -1,4 +1,4 @@
-"""ASTParser class for extracting imported modules from Python files."""
+"""AST-based import extraction from Python source files."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ class _ImportVisitor(ast.NodeVisitor):
 
     def visit_Import(self, node: ast.Import) -> None:
         """
-        Visit an ``import`` statement.
+        Visit an `import` statement.
 
         Examples:
             import os -> adds "os"
@@ -34,11 +34,11 @@ class _ImportVisitor(ast.NodeVisitor):
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """
-        Visit a ``from ... import ...`` statement.
+        Visit a `from ... import ...` statement.
 
         For normal imports, only the module portion is recorded.
 
-        For bare relative imports such as ``from . import localmod``,
+        For bare relative imports such as `from . import localmod`,
         each imported name is recorded as a relative module candidate.
 
         Examples:
@@ -63,25 +63,19 @@ class _ImportVisitor(ast.NodeVisitor):
                 return
 
             for alias in node.names:
-                if alias.name == "*":
-                    continue
-
-                self.imports.add(
-                    f"{dots}{alias.name}",
-                )
+                if alias.name != "*":
+                    self.imports.add(f"{dots}{alias.name}")
 
             return
 
-        self.imports.add(
-            f"{dots}{node.module}",
-        )
+        self.imports.add(f"{dots}{node.module}")
 
 
 class ASTParser:
     """
     Stateless utility for extracting imported modules from Python files.
 
-    This class uses Python's built-in ``ast`` module to parse source code
+    This class uses Python's built-in `ast` module to parse source code
     without executing it.
     """
 
@@ -91,31 +85,18 @@ class ASTParser:
         Extract imported module names from a Python file.
 
         Args:
-            file_path:
-                Path to the Python file to parse.
+            file_path: Path to the Python file to parse.
 
         Returns:
             Set of imported module names found in the file.
 
         Raises:
-            FileNotFoundError:
-                If the file does not exist.
-            UnicodeDecodeError:
-                If the source cannot be decoded as UTF-8.
-            SyntaxError:
-                If the file contains invalid Python syntax.
+            FileNotFoundError: If the file does not exist.
+            UnicodeDecodeError: If the source cannot be decoded as UTF-8.
+            SyntaxError: If the file contains invalid Python syntax.
         """
-        with open(
-            file_path,
-            "r",
-            encoding="utf-8",
-        ) as file:
-            content = file.read()
-
-        tree = ast.parse(
-            content,
-            filename=str(file_path),
-        )
+        content = file_path.read_text(encoding="utf-8")
+        tree = ast.parse(content, filename=str(file_path))
 
         visitor = _ImportVisitor()
         visitor.visit(tree)

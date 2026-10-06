@@ -62,8 +62,8 @@ class DotWriter(IOutputWriter):
         """Build Graphviz DOT text from the canonical graph export."""
         lines = [
             "digraph depcycle {",
-            "  rankdir=LR;",
-            '  node [shape=box style="filled,rounded" fontname="Helvetica"];',
+            "    rankdir=LR;",
+            '    node [shape=box style="filled,rounded" fontname="Helvetica"];',
             "",
         ]
 
@@ -72,7 +72,7 @@ class DotWriter(IOutputWriter):
             fill, color = self._node_attributes(node["type"])
 
             lines.append(
-                f'  "{name}" [fillcolor="{fill}" color="{color}" label="{name}"];'
+                f'    "{name}" [fillcolor="{fill}" color="{color}" label="{name}"];'
             )
 
         lines.append("")
@@ -84,7 +84,7 @@ class DotWriter(IOutputWriter):
             edge_color, penwidth = self._edge_attributes(edge["in_cycle"])
 
             lines.append(
-                f'  "{source}" -> "{target}" '
+                f'    "{source}" -> "{target}" '
                 f'[color="{edge_color}" penwidth={penwidth}];'
             )
 

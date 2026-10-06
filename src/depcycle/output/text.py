@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ..graph.graph import DependencyGraph
-from ..graph.node import ModuleNode
+from ..graph.graph import Graph
+from ..graph.node import Node
 from .base import GraphExport, IOutputWriter
 
 
@@ -35,8 +35,8 @@ class TextWriter(IOutputWriter):
 
     @staticmethod
     def format_inspection(
-        graph: DependencyGraph,
-        cycles: list[list[ModuleNode]],
+        graph: Graph,
+        cycles: list[list[Node]],
         module_name: str,
     ) -> dict[str, object]:
         """Format single module inspection details as a dictionary/JSON object."""
@@ -45,28 +45,42 @@ class TextWriter(IOutputWriter):
 
         node = graph.nodes[module_name]
         deps = sorted(dependency.name for dependency in node.dependencies)
-        dependents = sorted(node.name for node in graph.dependents(module_name))
+
+        # Safely obtain dependents and reachable dependents if supported by Graph
+        dependents_fn = getattr(graph, "dependents", None)
+        dependents_nodes = dependents_fn(module_name) if dependents_fn else []
+        dependents = sorted(n.name for n in dependents_nodes)
+
         touching_cycles = [
             [n.name for n in cycle]
             for cycle in cycles
             if any(n.name == module_name for n in cycle)
         ]
 
+        node_type_val = (
+            node.node_type.value
+            if hasattr(node.node_type, "value")
+            else str(node.node_type)
+        )
+
+        reachable_fn = getattr(graph, "reachable_dependents", None)
+        reachable_count = len(reachable_fn(module_name)) if reachable_fn else 0
+
         return {
             "module": module_name,
-            "type": node.module_type.value,
+            "type": node_type_val,
             "file": str(node.file_path) if node.file_path else None,
             "dependencies_count": len(deps),
             "dependencies": deps,
             "dependents_count": len(dependents),
             "dependents": dependents,
-            "reachable_dependents_count": len(graph.reachable_dependents(module_name)),
+            "reachable_dependents_count": reachable_count,
             "cycles_count": len(touching_cycles),
             "cycles": touching_cycles,
         }
 
     @staticmethod
-    def format_cycles(cycles: list[list[ModuleNode]]) -> dict[str, object]:
+    def format_cycles(cycles: list[list[Node]]) -> dict[str, object]:
         """Format circular dependencies as a dictionary/JSON object."""
         return {
             "cycles": [[node.name for node in cycle] for cycle in cycles],

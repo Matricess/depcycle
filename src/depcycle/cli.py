@@ -7,8 +7,8 @@ import json
 import sys
 from pathlib import Path
 
+from .analyzer import analyze_project
 from .config import AnalysisConfig
-from .engine import analyze_project
 from .output import DotWriter, HtmlWriter, JsonWriter, TextWriter, build_export
 
 _WRITERS = {
@@ -43,7 +43,6 @@ Examples:
             required=True,
         )
 
-        # analyze subcommand
         analyze_parser = subparsers.add_parser(
             "analyze",
             help="Analyze project dependencies and generate report output (HTML/JSON/DOT)",
@@ -93,7 +92,6 @@ Examples:
             help="Exit with status 1 if any circular dependencies are found (CI/CD integration)",
         )
 
-        # inspect subcommand
         inspect_parser = subparsers.add_parser(
             "inspect",
             help="Inspect a specific module or query circular dependencies",
@@ -121,7 +119,6 @@ Examples:
             default=None,
         )
 
-        # Support legacy 'query' alias for backwards compatibility
         query_parser = subparsers.add_parser(
             "query",
             help="Legacy subcommand alias for inspect",
@@ -143,10 +140,15 @@ Examples:
     def _validate_project_path(project_path: Path) -> None:
         """Exit with status 1 if project path is missing or not a directory."""
         if not project_path.exists():
-            print(f"Error: Project path does not exist: {project_path}", file=sys.stderr)
+            print(
+                f"Error: Project path does not exist: {project_path}", file=sys.stderr
+            )
             sys.exit(1)
         if not project_path.is_dir():
-            print(f"Error: Project path is not a directory: {project_path}", file=sys.stderr)
+            print(
+                f"Error: Project path is not a directory: {project_path}",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
     @staticmethod
@@ -157,16 +159,22 @@ Examples:
 
         output_arg = parsed_args.output
         output_to_stdout = output_arg == "-"
-        output_path = None if output_to_stdout or output_arg is None else Path(output_arg)
+        output_path = (
+            None if output_to_stdout or output_arg is None else Path(output_arg)
+        )
         output_format = parsed_args.format
 
         if output_format is None:
-            if output_path is not None and output_path.suffix.lower().lstrip(".") in {"html", "json", "dot"}:
+            if output_path is not None and output_path.suffix.lower().lstrip(".") in {
+                "html",
+                "json",
+                "dot",
+            }:
                 output_format = output_path.suffix.lower().lstrip(".")
             else:
                 output_format = "html"
 
-        if output_arg is None:
+        if output_arg is None and not output_to_stdout:
             output_path = Path(f"dependencies.{output_format}")
 
         config = AnalysisConfig.from_pyproject(
@@ -180,10 +188,13 @@ Examples:
 
         print(f"Analyzing project: {config.project_path}", file=sys.stderr)
         graph, cycles = analyze_project(config)
-        print(f"Found {len(graph)} modules", file=sys.stderr)
+        print(f"Found {len(graph.nodes)} modules", file=sys.stderr)
 
         if cycles:
-            print(f"\n⚠️  Warning: Found {len(cycles)} circular dependency cycles!", file=sys.stderr)
+            print(
+                f"\n⚠️ Warning: Found {len(cycles)} circular dependency cycles!",
+                file=sys.stderr,
+            )
             for i, cycle in enumerate(cycles[:5], start=1):
                 cycle_names = [node.name for node in cycle]
                 print(f"  Cycle {i}: {' → '.join(cycle_names)}", file=sys.stderr)
@@ -200,11 +211,16 @@ Examples:
         print(f"\nGenerating {output_format.upper()} output...", file=sys.stderr)
         writer_cls().write(export, output_path)
 
-        label = "written to stdout" if output_path is None else f"saved to: {output_path}"
+        label = (
+            "written to stdout" if output_path is None else f"saved to: {output_path}"
+        )
         print(f"✓ {output_format.upper()} output {label}", file=sys.stderr)
 
         if config.fail_on_cycles and cycles:
-            print("\nError: Circular dependencies found and --fail-on-cycles is active.", file=sys.stderr)
+            print(
+                "\nError: Circular dependencies found and --fail-on-cycles is active.",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
     @staticmethod
@@ -221,9 +237,13 @@ Examples:
 
         graph, cycles = analyze_project(config)
 
-        # Support both direct inspect and legacy query format
-        show_cycles_only = getattr(parsed_args, "cycles", False) or getattr(parsed_args, "query_type", None) == "cycles"
-        target_module = getattr(parsed_args, "module_name", None) or getattr(parsed_args, "module", None)
+        show_cycles_only = (
+            getattr(parsed_args, "cycles", False)
+            or getattr(parsed_args, "query_type", None) == "cycles"
+        )
+        target_module = getattr(parsed_args, "module_name", None) or getattr(
+            parsed_args, "module", None
+        )
 
         if show_cycles_only:
             result = TextWriter.format_cycles(cycles)

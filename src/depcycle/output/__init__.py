@@ -1,11 +1,13 @@
 """Output writers for serializing dependency graph data."""
 
+from __future__ import annotations
+
 from .base import GraphExport, IOutputWriter
-from .dot_writer import DotWriter
-from .html_writer import HtmlWriter
-from .json_writer import JsonWriter
+from .dot import DotWriter
+from .html import HtmlWriter
+from .json import JsonWriter
 from .model import build_export
-from .text_writer import TextWriter
+from .text import TextWriter
 
 __all__ = [
     "DotWriter",

@@ -5,6 +5,8 @@ DepCycle helps developers understand complex codebases by automatically
 generating visual maps of module dependencies.
 """
 
+from __future__ import annotations
+
 from importlib.metadata import PackageNotFoundError, version
 
 try:
@@ -14,21 +16,24 @@ except PackageNotFoundError:
 
 from .cli import DepCycleCLI
 from .config import AnalysisConfig
-from .graph import DependencyGraph, ModuleNode, ModuleType
+from .graph.graph import Graph
+from .graph.node import Node, NodeType
 from .output import DotWriter, HtmlWriter, IOutputWriter, JsonWriter
-from .parsing import ASTParser, PackageMetadataReader, Project
+from .parsing.imports import ASTParser
+from .parsing.metadata import PackageMetadataReader
+from .parsing.workspace import Workspace
 
 __all__ = [
     "ASTParser",
     "AnalysisConfig",
     "DepCycleCLI",
-    "DependencyGraph",
     "DotWriter",
+    "Graph",
     "HtmlWriter",
     "IOutputWriter",
     "JsonWriter",
-    "ModuleNode",
-    "ModuleType",
+    "Node",
+    "NodeType",
     "PackageMetadataReader",
-    "Project",
+    "Workspace",
 ]

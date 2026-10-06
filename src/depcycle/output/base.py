@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TypedDict
 
-from ..graph.graph import DependencyGraph
+from ..graph.graph import Graph
 
 
 class NodeExport(TypedDict):
@@ -59,30 +59,34 @@ class GraphExport:
     summary: SummaryExport
 
 
-def project_label(graph: DependencyGraph) -> str:
+def project_label(graph: Graph) -> str:
     """Return a portable project label without exposing the local filesystem path."""
     project_root = getattr(graph, "_project_root", None)
 
-    return project_root.name if project_root else "Project"
+    if isinstance(project_root, (str, Path)):
+        return Path(project_root).name
+
+    return "Project"
 
 
 def relative_file_path(
-    graph: DependencyGraph,
-    file_path: Path | None,
+    graph: Graph,
+    file_path: Path | str | None,
 ) -> str:
     """Return a node file path relative to the analyzed project root."""
     if file_path is None:
         return ""
 
+    path_obj = Path(file_path)
     project_root = getattr(graph, "_project_root", None)
 
     if project_root is None:
-        return file_path.name
+        return path_obj.name
 
     try:
-        return file_path.relative_to(project_root).as_posix()
+        return path_obj.relative_to(Path(project_root)).as_posix()
     except ValueError:
-        return file_path.name
+        return path_obj.name
 
 
 class IOutputWriter(ABC):

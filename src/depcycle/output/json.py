@@ -16,6 +16,7 @@ class JsonWriter(IOutputWriter):
         export: GraphExport,
         dest: Path | None = None,
     ) -> None:
+        """Serialize the graph export into formatted JSON."""
         payload = {
             "schema_version": 2,
             "project": export.project,

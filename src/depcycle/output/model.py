@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from itertools import pairwise
 
-from ..graph.graph import DependencyGraph
-from ..graph.node import ModuleNode
+from ..graph.graph import Graph
+from ..graph.node import Node
 from .base import (
     CycleExport,
     EdgeExport,
@@ -18,8 +18,8 @@ from .base import (
 
 
 def build_export(
-    graph: DependencyGraph,
-    cycles: list[list[ModuleNode]] | None = None,
+    graph: Graph,
+    cycles: list[list[Node]] | None = None,
 ) -> GraphExport:
     """
     Build the canonical export model once.
@@ -60,7 +60,9 @@ def build_export(
     node_exports: list[NodeExport] = [
         {
             "id": node.name,
-            "type": node.module_type.value,
+            "type": node.node_type.value
+            if hasattr(node.node_type, "value")
+            else str(node.node_type),
             "file": relative_file_path(
                 graph,
                 node.file_path,
@@ -83,7 +85,14 @@ def build_export(
     fan_in_counts: dict[str, int] = {node.name: 0 for node in sorted_nodes}
 
     for node in sorted_nodes:
-        counts[node.module_type.value] += 1
+        node_type_val = (
+            node.node_type.value
+            if hasattr(node.node_type, "value")
+            else str(node.node_type)
+        )
+        if node_type_val in counts:
+            counts[node_type_val] += 1
+
         fan_out_counts[node.name] = len(node.dependencies)
 
         for dependency in sorted(

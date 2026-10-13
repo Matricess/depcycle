@@ -1,0 +1,86 @@
+{
+  "schema_version": 2,
+  "project": "Project",
+  "summary": {
+    "total_modules": 6,
+    "local": 5,
+    "stdlib": 1,
+    "third_party": 0,
+    "unknown": 0,
+    "cycles_found": 0,
+    "max_fan_out": 2,
+    "max_fan_in": 3,
+    "isolated_modules": 1
+  },
+  "nodes": [
+    {
+      "id": "dataclasses",
+      "type": "stdlib",
+      "file": "",
+      "dependencies": 0
+    },
+    {
+      "id": "layered_app",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 0
+    },
+    {
+      "id": "layered_app.api",
+      "type": "local",
+      "file": "api.py",
+      "dependencies": 2
+    },
+    {
+      "id": "layered_app.models",
+      "type": "local",
+      "file": "models.py",
+      "dependencies": 1
+    },
+    {
+      "id": "layered_app.repositories",
+      "type": "local",
+      "file": "repositories.py",
+      "dependencies": 1
+    },
+    {
+      "id": "layered_app.services",
+      "type": "local",
+      "file": "services.py",
+      "dependencies": 2
+    }
+  ],
+  "edges": [
+    {
+      "source": "layered_app.api",
+      "target": "layered_app.models",
+      "in_cycle": false
+    },
+    {
+      "source": "layered_app.api",
+      "target": "layered_app.services",
+      "in_cycle": false
+    },
+    {
+      "source": "layered_app.models",
+      "target": "dataclasses",
+      "in_cycle": false
+    },
+    {
+      "source": "layered_app.repositories",
+      "target": "layered_app.models",
+      "in_cycle": false
+    },
+    {
+      "source": "layered_app.services",
+      "target": "layered_app.models",
+      "in_cycle": false
+    },
+    {
+      "source": "layered_app.services",
+      "target": "layered_app.repositories",
+      "in_cycle": false
+    }
+  ],
+  "cycles": []
+}

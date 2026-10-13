@@ -1,0 +1,18 @@
+digraph depcycle {
+    rankdir=LR;
+    node [shape=box style="filled,rounded" fontname="Helvetica"];
+
+    "dataclasses" [fillcolor="#EEEEEE" color="#6D6D6D" label="dataclasses"];
+    "layered_app" [fillcolor="#BBDEFB" color="#1E88E5" label="layered_app"];
+    "layered_app.api" [fillcolor="#BBDEFB" color="#1E88E5" label="layered_app.api"];
+    "layered_app.models" [fillcolor="#BBDEFB" color="#1E88E5" label="layered_app.models"];
+    "layered_app.repositories" [fillcolor="#BBDEFB" color="#1E88E5" label="layered_app.repositories"];
+    "layered_app.services" [fillcolor="#BBDEFB" color="#1E88E5" label="layered_app.services"];
+
+    "layered_app.api" -> "layered_app.models" [color="#444444" penwidth=1.2];
+    "layered_app.api" -> "layered_app.services" [color="#444444" penwidth=1.2];
+    "layered_app.models" -> "dataclasses" [color="#444444" penwidth=1.2];
+    "layered_app.repositories" -> "layered_app.models" [color="#444444" penwidth=1.2];
+    "layered_app.services" -> "layered_app.models" [color="#444444" penwidth=1.2];
+    "layered_app.services" -> "layered_app.repositories" [color="#444444" penwidth=1.2];
+}

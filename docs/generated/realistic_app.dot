@@ -1,0 +1,38 @@
+digraph depcycle {
+    rankdir=LR;
+    node [shape=box style="filled,rounded" fontname="Helvetica"];
+
+    "dataclasses" [fillcolor="#EEEEEE" color="#6D6D6D" label="dataclasses"];
+    "json" [fillcolor="#EEEEEE" color="#6D6D6D" label="json"];
+    "pathlib" [fillcolor="#EEEEEE" color="#6D6D6D" label="pathlib"];
+    "realistic_app" [fillcolor="#BBDEFB" color="#1E88E5" label="realistic_app"];
+    "realistic_app.api" [fillcolor="#BBDEFB" color="#1E88E5" label="realistic_app.api"];
+    "realistic_app.api.routes" [fillcolor="#BBDEFB" color="#1E88E5" label="realistic_app.api.routes"];
+    "realistic_app.main" [fillcolor="#BBDEFB" color="#1E88E5" label="realistic_app.main"];
+    "realistic_app.models" [fillcolor="#BBDEFB" color="#1E88E5" label="realistic_app.models"];
+    "realistic_app.models.order" [fillcolor="#BBDEFB" color="#1E88E5" label="realistic_app.models.order"];
+    "realistic_app.notifications" [fillcolor="#BBDEFB" color="#1E88E5" label="realistic_app.notifications"];
+    "realistic_app.notifications.sender" [fillcolor="#BBDEFB" color="#1E88E5" label="realistic_app.notifications.sender"];
+    "realistic_app.repositories" [fillcolor="#BBDEFB" color="#1E88E5" label="realistic_app.repositories"];
+    "realistic_app.repositories.orders" [fillcolor="#BBDEFB" color="#1E88E5" label="realistic_app.repositories.orders"];
+    "realistic_app.services" [fillcolor="#BBDEFB" color="#1E88E5" label="realistic_app.services"];
+    "realistic_app.services.orders" [fillcolor="#BBDEFB" color="#1E88E5" label="realistic_app.services.orders"];
+    "requests" [fillcolor="#FFE0B2" color="#FB8C00" label="requests"];
+    "rich.console" [fillcolor="#FFE0B2" color="#FB8C00" label="rich.console"];
+
+    "realistic_app.api.routes" -> "realistic_app.models.order" [color="#444444" penwidth=1.2];
+    "realistic_app.api.routes" -> "realistic_app.services.orders" [color="#444444" penwidth=1.2];
+    "realistic_app.main" -> "json" [color="#444444" penwidth=1.2];
+    "realistic_app.main" -> "pathlib" [color="#444444" penwidth=1.2];
+    "realistic_app.main" -> "realistic_app.api.routes" [color="#444444" penwidth=1.2];
+    "realistic_app.main" -> "requests" [color="#444444" penwidth=1.2];
+    "realistic_app.main" -> "rich.console" [color="#444444" penwidth=1.2];
+    "realistic_app.models.order" -> "dataclasses" [color="#444444" penwidth=1.2];
+    "realistic_app.notifications.sender" -> "realistic_app.models.order" [color="#444444" penwidth=1.2];
+    "realistic_app.notifications.sender" -> "realistic_app.services.orders" [color="#D32F2F" penwidth=2.5];
+    "realistic_app.notifications.sender" -> "requests" [color="#444444" penwidth=1.2];
+    "realistic_app.repositories.orders" -> "realistic_app.models.order" [color="#444444" penwidth=1.2];
+    "realistic_app.services.orders" -> "realistic_app.models.order" [color="#444444" penwidth=1.2];
+    "realistic_app.services.orders" -> "realistic_app.notifications.sender" [color="#D32F2F" penwidth=2.5];
+    "realistic_app.services.orders" -> "realistic_app.repositories.orders" [color="#444444" penwidth=1.2];
+}

@@ -1,1 +1,0 @@
-"""Business entities for the shop."""

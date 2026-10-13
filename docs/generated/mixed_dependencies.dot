@@ -1,0 +1,21 @@
+digraph depcycle {
+    rankdir=LR;
+    node [shape=box style="filled,rounded" fontname="Helvetica"];
+
+    "json" [fillcolor="#EEEEEE" color="#6D6D6D" label="json"];
+    "mixed_dependencies" [fillcolor="#BBDEFB" color="#1E88E5" label="mixed_dependencies"];
+    "mixed_dependencies.client" [fillcolor="#BBDEFB" color="#1E88E5" label="mixed_dependencies.client"];
+    "mixed_dependencies.main" [fillcolor="#BBDEFB" color="#1E88E5" label="mixed_dependencies.main"];
+    "mixed_dependencies.settings" [fillcolor="#BBDEFB" color="#1E88E5" label="mixed_dependencies.settings"];
+    "pathlib" [fillcolor="#EEEEEE" color="#6D6D6D" label="pathlib"];
+    "requests" [fillcolor="#FFE0B2" color="#FB8C00" label="requests"];
+    "rich.console" [fillcolor="#FFE0B2" color="#FB8C00" label="rich.console"];
+
+    "mixed_dependencies.client" -> "mixed_dependencies.settings" [color="#444444" penwidth=1.2];
+    "mixed_dependencies.client" -> "requests" [color="#444444" penwidth=1.2];
+    "mixed_dependencies.main" -> "json" [color="#444444" penwidth=1.2];
+    "mixed_dependencies.main" -> "mixed_dependencies.client" [color="#444444" penwidth=1.2];
+    "mixed_dependencies.main" -> "mixed_dependencies.settings" [color="#444444" penwidth=1.2];
+    "mixed_dependencies.main" -> "pathlib" [color="#444444" penwidth=1.2];
+    "mixed_dependencies.main" -> "rich.console" [color="#444444" penwidth=1.2];
+}

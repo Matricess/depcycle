@@ -1,0 +1,19 @@
+digraph depcycle {
+    rankdir=LR;
+    node [shape=box style="filled,rounded" fontname="Helvetica"];
+
+    "cyclic_app" [fillcolor="#BBDEFB" color="#1E88E5" label="cyclic_app"];
+    "cyclic_app.direct" [fillcolor="#BBDEFB" color="#1E88E5" label="cyclic_app.direct"];
+    "cyclic_app.direct.mod_a" [fillcolor="#BBDEFB" color="#1E88E5" label="cyclic_app.direct.mod_a"];
+    "cyclic_app.direct.mod_b" [fillcolor="#BBDEFB" color="#1E88E5" label="cyclic_app.direct.mod_b"];
+    "cyclic_app.long_cycle" [fillcolor="#BBDEFB" color="#1E88E5" label="cyclic_app.long_cycle"];
+    "cyclic_app.long_cycle.mod_x" [fillcolor="#BBDEFB" color="#1E88E5" label="cyclic_app.long_cycle.mod_x"];
+    "cyclic_app.long_cycle.mod_y" [fillcolor="#BBDEFB" color="#1E88E5" label="cyclic_app.long_cycle.mod_y"];
+    "cyclic_app.long_cycle.mod_z" [fillcolor="#BBDEFB" color="#1E88E5" label="cyclic_app.long_cycle.mod_z"];
+
+    "cyclic_app.direct.mod_a" -> "cyclic_app.direct.mod_b" [color="#D32F2F" penwidth=2.5];
+    "cyclic_app.direct.mod_b" -> "cyclic_app.direct.mod_a" [color="#D32F2F" penwidth=2.5];
+    "cyclic_app.long_cycle.mod_x" -> "cyclic_app.long_cycle.mod_y" [color="#D32F2F" penwidth=2.5];
+    "cyclic_app.long_cycle.mod_y" -> "cyclic_app.long_cycle.mod_z" [color="#D32F2F" penwidth=2.5];
+    "cyclic_app.long_cycle.mod_z" -> "cyclic_app.long_cycle.mod_x" [color="#D32F2F" penwidth=2.5];
+}

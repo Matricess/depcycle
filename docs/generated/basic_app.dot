@@ -1,0 +1,13 @@
+digraph depcycle {
+    rankdir=LR;
+    node [shape=box style="filled,rounded" fontname="Helvetica"];
+
+    "basic_app" [fillcolor="#BBDEFB" color="#1E88E5" label="basic_app"];
+    "basic_app.formatting" [fillcolor="#BBDEFB" color="#1E88E5" label="basic_app.formatting"];
+    "basic_app.greetings" [fillcolor="#BBDEFB" color="#1E88E5" label="basic_app.greetings"];
+    "basic_app.main" [fillcolor="#BBDEFB" color="#1E88E5" label="basic_app.main"];
+
+    "basic_app.formatting" -> "basic_app.greetings" [color="#444444" penwidth=1.2];
+    "basic_app.main" -> "basic_app.formatting" [color="#444444" penwidth=1.2];
+    "basic_app.main" -> "basic_app.greetings" [color="#444444" penwidth=1.2];
+}

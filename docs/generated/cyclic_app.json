@@ -1,0 +1,133 @@
+{
+  "schema_version": 2,
+  "project": "Project",
+  "summary": {
+    "total_modules": 8,
+    "local": 8,
+    "stdlib": 0,
+    "third_party": 0,
+    "unknown": 0,
+    "cycles_found": 2,
+    "max_fan_out": 1,
+    "max_fan_in": 1,
+    "isolated_modules": 3
+  },
+  "nodes": [
+    {
+      "id": "cyclic_app",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 0
+    },
+    {
+      "id": "cyclic_app.direct",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 0
+    },
+    {
+      "id": "cyclic_app.direct.mod_a",
+      "type": "local",
+      "file": "mod_a.py",
+      "dependencies": 1
+    },
+    {
+      "id": "cyclic_app.direct.mod_b",
+      "type": "local",
+      "file": "mod_b.py",
+      "dependencies": 1
+    },
+    {
+      "id": "cyclic_app.long_cycle",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 0
+    },
+    {
+      "id": "cyclic_app.long_cycle.mod_x",
+      "type": "local",
+      "file": "mod_x.py",
+      "dependencies": 1
+    },
+    {
+      "id": "cyclic_app.long_cycle.mod_y",
+      "type": "local",
+      "file": "mod_y.py",
+      "dependencies": 1
+    },
+    {
+      "id": "cyclic_app.long_cycle.mod_z",
+      "type": "local",
+      "file": "mod_z.py",
+      "dependencies": 1
+    }
+  ],
+  "edges": [
+    {
+      "source": "cyclic_app.direct.mod_a",
+      "target": "cyclic_app.direct.mod_b",
+      "in_cycle": true
+    },
+    {
+      "source": "cyclic_app.direct.mod_b",
+      "target": "cyclic_app.direct.mod_a",
+      "in_cycle": true
+    },
+    {
+      "source": "cyclic_app.long_cycle.mod_x",
+      "target": "cyclic_app.long_cycle.mod_y",
+      "in_cycle": true
+    },
+    {
+      "source": "cyclic_app.long_cycle.mod_y",
+      "target": "cyclic_app.long_cycle.mod_z",
+      "in_cycle": true
+    },
+    {
+      "source": "cyclic_app.long_cycle.mod_z",
+      "target": "cyclic_app.long_cycle.mod_x",
+      "in_cycle": true
+    }
+  ],
+  "cycles": [
+    {
+      "nodes": [
+        "cyclic_app.direct.mod_a",
+        "cyclic_app.direct.mod_b",
+        "cyclic_app.direct.mod_a"
+      ],
+      "edges": [
+        [
+          "cyclic_app.direct.mod_a",
+          "cyclic_app.direct.mod_b"
+        ],
+        [
+          "cyclic_app.direct.mod_b",
+          "cyclic_app.direct.mod_a"
+        ]
+      ]
+    },
+    {
+      "nodes": [
+        "cyclic_app.long_cycle.mod_x",
+        "cyclic_app.long_cycle.mod_y",
+        "cyclic_app.long_cycle.mod_z",
+        "cyclic_app.long_cycle.mod_x"
+      ],
+      "edges": [
+        [
+          "cyclic_app.long_cycle.mod_x",
+          "cyclic_app.long_cycle.mod_y"
+        ],
+        [
+          "cyclic_app.long_cycle.mod_y",
+          "cyclic_app.long_cycle.mod_z"
+        ],
+        [
+          "cyclic_app.long_cycle.mod_z",
+          "cyclic_app.long_cycle.mod_x"
+        ]
+      ]
+    }
+  ]
+}

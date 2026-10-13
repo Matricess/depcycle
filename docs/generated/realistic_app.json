@@ -1,0 +1,215 @@
+{
+  "schema_version": 2,
+  "project": "Project",
+  "summary": {
+    "total_modules": 17,
+    "local": 12,
+    "stdlib": 3,
+    "third_party": 2,
+    "unknown": 0,
+    "cycles_found": 1,
+    "max_fan_out": 5,
+    "max_fan_in": 4,
+    "isolated_modules": 6
+  },
+  "nodes": [
+    {
+      "id": "dataclasses",
+      "type": "stdlib",
+      "file": "",
+      "dependencies": 0
+    },
+    {
+      "id": "json",
+      "type": "stdlib",
+      "file": "",
+      "dependencies": 0
+    },
+    {
+      "id": "pathlib",
+      "type": "stdlib",
+      "file": "",
+      "dependencies": 0
+    },
+    {
+      "id": "realistic_app",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 0
+    },
+    {
+      "id": "realistic_app.api",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 0
+    },
+    {
+      "id": "realistic_app.api.routes",
+      "type": "local",
+      "file": "routes.py",
+      "dependencies": 2
+    },
+    {
+      "id": "realistic_app.main",
+      "type": "local",
+      "file": "main.py",
+      "dependencies": 5
+    },
+    {
+      "id": "realistic_app.models",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 0
+    },
+    {
+      "id": "realistic_app.models.order",
+      "type": "local",
+      "file": "order.py",
+      "dependencies": 1
+    },
+    {
+      "id": "realistic_app.notifications",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 0
+    },
+    {
+      "id": "realistic_app.notifications.sender",
+      "type": "local",
+      "file": "sender.py",
+      "dependencies": 3
+    },
+    {
+      "id": "realistic_app.repositories",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 0
+    },
+    {
+      "id": "realistic_app.repositories.orders",
+      "type": "local",
+      "file": "orders.py",
+      "dependencies": 1
+    },
+    {
+      "id": "realistic_app.services",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 0
+    },
+    {
+      "id": "realistic_app.services.orders",
+      "type": "local",
+      "file": "orders.py",
+      "dependencies": 3
+    },
+    {
+      "id": "requests",
+      "type": "third_party",
+      "file": "",
+      "dependencies": 0
+    },
+    {
+      "id": "rich.console",
+      "type": "third_party",
+      "file": "",
+      "dependencies": 0
+    }
+  ],
+  "edges": [
+    {
+      "source": "realistic_app.api.routes",
+      "target": "realistic_app.models.order",
+      "in_cycle": false
+    },
+    {
+      "source": "realistic_app.api.routes",
+      "target": "realistic_app.services.orders",
+      "in_cycle": false
+    },
+    {
+      "source": "realistic_app.main",
+      "target": "json",
+      "in_cycle": false
+    },
+    {
+      "source": "realistic_app.main",
+      "target": "pathlib",
+      "in_cycle": false
+    },
+    {
+      "source": "realistic_app.main",
+      "target": "realistic_app.api.routes",
+      "in_cycle": false
+    },
+    {
+      "source": "realistic_app.main",
+      "target": "requests",
+      "in_cycle": false
+    },
+    {
+      "source": "realistic_app.main",
+      "target": "rich.console",
+      "in_cycle": false
+    },
+    {
+      "source": "realistic_app.models.order",
+      "target": "dataclasses",
+      "in_cycle": false
+    },
+    {
+      "source": "realistic_app.notifications.sender",
+      "target": "realistic_app.models.order",
+      "in_cycle": false
+    },
+    {
+      "source": "realistic_app.notifications.sender",
+      "target": "realistic_app.services.orders",
+      "in_cycle": true
+    },
+    {
+      "source": "realistic_app.notifications.sender",
+      "target": "requests",
+      "in_cycle": false
+    },
+    {
+      "source": "realistic_app.repositories.orders",
+      "target": "realistic_app.models.order",
+      "in_cycle": false
+    },
+    {
+      "source": "realistic_app.services.orders",
+      "target": "realistic_app.models.order",
+      "in_cycle": false
+    },
+    {
+      "source": "realistic_app.services.orders",
+      "target": "realistic_app.notifications.sender",
+      "in_cycle": true
+    },
+    {
+      "source": "realistic_app.services.orders",
+      "target": "realistic_app.repositories.orders",
+      "in_cycle": false
+    }
+  ],
+  "cycles": [
+    {
+      "nodes": [
+        "realistic_app.services.orders",
+        "realistic_app.notifications.sender",
+        "realistic_app.services.orders"
+      ],
+      "edges": [
+        [
+          "realistic_app.services.orders",
+          "realistic_app.notifications.sender"
+        ],
+        [
+          "realistic_app.notifications.sender",
+          "realistic_app.services.orders"
+        ]
+      ]
+    }
+  ]
+}

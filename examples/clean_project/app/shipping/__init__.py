@@ -1,1 +1,0 @@
-"""Shipping label integration."""

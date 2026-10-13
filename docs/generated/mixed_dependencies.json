@@ -1,0 +1,103 @@
+{
+  "schema_version": 2,
+  "project": "Project",
+  "summary": {
+    "total_modules": 8,
+    "local": 4,
+    "stdlib": 2,
+    "third_party": 2,
+    "unknown": 0,
+    "cycles_found": 0,
+    "max_fan_out": 5,
+    "max_fan_in": 2,
+    "isolated_modules": 1
+  },
+  "nodes": [
+    {
+      "id": "json",
+      "type": "stdlib",
+      "file": "",
+      "dependencies": 0
+    },
+    {
+      "id": "mixed_dependencies",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 0
+    },
+    {
+      "id": "mixed_dependencies.client",
+      "type": "local",
+      "file": "client.py",
+      "dependencies": 2
+    },
+    {
+      "id": "mixed_dependencies.main",
+      "type": "local",
+      "file": "main.py",
+      "dependencies": 5
+    },
+    {
+      "id": "mixed_dependencies.settings",
+      "type": "local",
+      "file": "settings.py",
+      "dependencies": 0
+    },
+    {
+      "id": "pathlib",
+      "type": "stdlib",
+      "file": "",
+      "dependencies": 0
+    },
+    {
+      "id": "requests",
+      "type": "third_party",
+      "file": "",
+      "dependencies": 0
+    },
+    {
+      "id": "rich.console",
+      "type": "third_party",
+      "file": "",
+      "dependencies": 0
+    }
+  ],
+  "edges": [
+    {
+      "source": "mixed_dependencies.client",
+      "target": "mixed_dependencies.settings",
+      "in_cycle": false
+    },
+    {
+      "source": "mixed_dependencies.client",
+      "target": "requests",
+      "in_cycle": false
+    },
+    {
+      "source": "mixed_dependencies.main",
+      "target": "json",
+      "in_cycle": false
+    },
+    {
+      "source": "mixed_dependencies.main",
+      "target": "mixed_dependencies.client",
+      "in_cycle": false
+    },
+    {
+      "source": "mixed_dependencies.main",
+      "target": "mixed_dependencies.settings",
+      "in_cycle": false
+    },
+    {
+      "source": "mixed_dependencies.main",
+      "target": "pathlib",
+      "in_cycle": false
+    },
+    {
+      "source": "mixed_dependencies.main",
+      "target": "rich.console",
+      "in_cycle": false
+    }
+  ],
+  "cycles": []
+}

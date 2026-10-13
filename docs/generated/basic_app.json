@@ -1,0 +1,59 @@
+{
+  "schema_version": 2,
+  "project": "Project",
+  "summary": {
+    "total_modules": 4,
+    "local": 4,
+    "stdlib": 0,
+    "third_party": 0,
+    "unknown": 0,
+    "cycles_found": 0,
+    "max_fan_out": 2,
+    "max_fan_in": 2,
+    "isolated_modules": 1
+  },
+  "nodes": [
+    {
+      "id": "basic_app",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 0
+    },
+    {
+      "id": "basic_app.formatting",
+      "type": "local",
+      "file": "formatting.py",
+      "dependencies": 1
+    },
+    {
+      "id": "basic_app.greetings",
+      "type": "local",
+      "file": "greetings.py",
+      "dependencies": 0
+    },
+    {
+      "id": "basic_app.main",
+      "type": "local",
+      "file": "main.py",
+      "dependencies": 2
+    }
+  ],
+  "edges": [
+    {
+      "source": "basic_app.formatting",
+      "target": "basic_app.greetings",
+      "in_cycle": false
+    },
+    {
+      "source": "basic_app.main",
+      "target": "basic_app.formatting",
+      "in_cycle": false
+    },
+    {
+      "source": "basic_app.main",
+      "target": "basic_app.greetings",
+      "in_cycle": false
+    }
+  ],
+  "cycles": []
+}

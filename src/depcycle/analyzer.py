@@ -8,7 +8,12 @@ from .graph.node import Node, NodeType
 from .parsing.imports import ASTParser
 from .parsing.metadata import PackageMetadataReader
 from .parsing.workspace import Workspace
-from .utils import get_stdlib_names, normalize_name, path_to_module_name
+from .utils import (
+    get_stdlib_names,
+    normalize_name,
+    path_to_module_name,
+    resolve_relative_import,
+)
 
 
 def analyze_project(
@@ -30,10 +35,14 @@ def analyze_project(
         workspace.get_python_files(exclude_patterns=config.exclude_patterns)
     )
 
+    source_root = workspace.root_path / "src"
+    if not source_root.is_dir():
+        source_root = workspace.root_path
+
     graph = Graph()
 
     for file_path in python_files:
-        module_name = path_to_module_name(file_path, workspace.root_path)
+        module_name = path_to_module_name(file_path, source_root)
         if module_name and module_name not in graph.nodes:
             node = Node(
                 name=module_name,
@@ -43,7 +52,7 @@ def analyze_project(
             graph.add_node(node)
 
     for file_path in python_files:
-        source_module = path_to_module_name(file_path, workspace.root_path)
+        source_module = path_to_module_name(file_path, source_root)
         if not source_module:
             continue
 
@@ -51,6 +60,14 @@ def analyze_project(
         imported_modules = parser.get_imports_from_file(file_path)
 
         for target_name in imported_modules:
+            target_name = resolve_relative_import(
+                target_name,
+                source_module,
+                is_package=file_path.name == "__init__.py",
+            )
+            if target_name is None:
+                continue
+
             target_node = graph.get_node(target_name)
             if not target_node:
                 target_node = Node(
@@ -93,9 +110,9 @@ def analyze_project(
         del graph.nodes[name]
 
     for node in graph.nodes.values():
-        node.dependencies.intersection_update(
-            {dep for dep in node.dependencies if dep.name in graph.nodes}
-        )
+        node.outgoing_edges = {
+            edge for edge in node.outgoing_edges if edge.target.name in graph.nodes
+        }
 
     cycles = graph.find_cycles()
 

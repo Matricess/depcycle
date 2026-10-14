@@ -74,4 +74,3 @@ def test_workspace_relative_path_glob_matching(tmp_path: Path) -> None:
     # Pattern matches relative path 'foo/bar/baz.py'
     files = ws.get_python_files(exclude_patterns=["foo/bar/*.py"])
     assert files == []
-

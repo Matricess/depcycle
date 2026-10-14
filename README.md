@@ -2,242 +2,165 @@
 
 [![PyPI](https://img.shields.io/pypi/v/depcycle.svg)](https://pypi.org/project/depcycle/)
 [![Python](https://img.shields.io/pypi/pyversions/depcycle.svg)](https://pypi.org/project/depcycle/)
-[![CI](https://github.com/Matricess/depcycle/actions/workflows/ci.yml/badge.svg)](https://github.com/Matricess/depcycle/actions/workflows/ci.yml)
+[![PyPI Downloads](https://static.pepy.tech/badge/depcycle)](https://pepy.tech/projects/depcycle)
+[![CI](https://github.com/Matricess/depcycle/actions/workflows/ci.yaml/badge.svg)](https://github.com/Matricess/depcycle/actions/workflows/ci.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## What is DepCycle?
+DepCycle is a command-line tool for understanding dependencies between Python modules. It scans Python source files, extracts imports, builds a directed dependency graph, detects circular dependencies, and generates reports for visual exploration or further processing.
 
-DepCycle is a command-line tool for understanding the dependencies inside a Python project.
+## Features
 
-It scans Python files, discovers imports, builds a dependency graph, identifies circular dependencies, and generates reports that you can explore or process.
+- Discover Python files while excluding common generated and environment paths.
+- Build a graph of module dependencies.
+- Detect circular dependency chains.
+- Classify modules as local, standard-library, third-party, or unknown where possible.
+- Export reports as interactive HTML, JSON, or Graphviz DOT.
+- Filter third-party, standard-library, and unknown dependencies.
+- Use JSON and DOT output in scripts and other tools.
 
-The HTML report provides an interactive dependency map for exploring your project visually, while JSON and DOT provide formats that can be used with other tools and workflows.
+Dependency classification is best-effort. A distribution name declared in project metadata may differ from the name used to import it in Python, so some imports may remain classified as unknown.
 
-It is designed to answer questions such as:
+## See DepCycle in action
 
-* Which modules depend on each other?
-* Where are my circular dependencies?
-* Which parts of the project depend on a particular module?
-* How is the codebase connected?
-* Which imports are local, standard-library, third-party, or unknown?
+The reports below are generated from the example projects in this repository. DepCycle natively generates HTML, JSON, and DOT files.
 
-## See DepCycle in Action
+### Layered dependencies
 
-DepCycle generates interactive dependency maps that make module relationships and circular dependencies easier to understand.
+A small application with dependencies flowing between layers.
 
-### Dependency Flow
+[Interactive HTML](docs/generated/layered_app.html) · [JSON](docs/generated/layered_app.json) · [DOT](docs/generated/layered_app.dot)
 
-![DepCycle pipeline project dependency graph](docs/images/pipeline-project.png)
+![Layered app dependency graph](docs/generated/layered_app_html_screenshot.png)
 
-### Circular Dependencies
+### Circular dependencies
 
-![DepCycle messy project circular dependency graph](docs/images/messy-project.png)
+Demonstrates a direct cycle and a longer circular dependency chain.
 
-The first example shows a layered dependency flow through a project. The second highlights a circular dependency directly in the graph.
+[Interactive HTML](docs/generated/cyclic_app.html) · [JSON](docs/generated/cyclic_app.json) · [DOT](docs/generated/cyclic_app.dot)
+
+![Circular dependencies graph](docs/generated/cyclic_app_html_screenshot.png)
+
+### A realistic project
+
+A larger multi-package example containing an intentional circular dependency.
+
+[Interactive HTML](docs/generated/realistic_app.html) · [JSON](docs/generated/realistic_app.json) · [DOT](docs/generated/realistic_app.dot)
+
+![Realistic app dependency graph](docs/generated/realistic_app_html_screenshot.png)
+
+### DepCycle analyzing itself
+
+These reports show DepCycle's own module dependency graph.
+
+[Interactive HTML](docs/generated/depcycle.html) · [JSON](docs/generated/depcycle.json) · [DOT](docs/generated/depcycle.dot)
+
+![DepCycle analyzing itself dependency graph](docs/generated/depcycle_html_screenshot.png)
+
+## Example projects
+
+The [`examples/`](examples/) directory contains five projects, progressing from simple imports to a more involved application.
+
+| Example | Demonstrates |
+| --- | --- |
+| [`basic_app`](examples/basic_app/) | Basic local imports and one-way dependencies |
+| [`layered_app`](examples/layered_app/) | A layered application structure |
+| [`mixed_dependencies`](examples/mixed_dependencies/) | Local, standard-library, and third-party imports |
+| [`cyclic_app`](examples/cyclic_app/) | Direct and multi-module circular dependencies |
+| [`realistic_app`](examples/realistic_app/) | A larger multi-package example with an intentional cycle |
+
+Generated reports for all five examples are available under [`docs/generated/`](docs/generated/). Each example has HTML, JSON, and DOT output.
 
 ## Installation
 
-Install DepCycle from PyPI:
+Install the published release from PyPI:
 
 ```bash
-pip install depcycle
+python -m pip install depcycle
 ```
 
-Or install in a dedicated virtual environment using `venv`:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install depcycle
-```
-
-Check the installation:
+Check the CLI:
 
 ```bash
 depcycle --help
 ```
 
-## Basic Usage
+> **Development version:** the code in this repository may contain changes that are not yet included in the published PyPI release. To run the checked-out source, see [Development](#development).
 
-Run DepCycle against a Python project:
+## Quick start
+
+Analyze a Python project and generate the default HTML report:
 
 ```bash
 depcycle analyze /path/to/your/project
 ```
 
-By default, this creates:
+By default, DepCycle writes `dependencies.html` to the current working directory. Open it in a browser to explore the dependency graph.
 
-```text
-dependencies.html
-```
-
-Open that file in a browser to explore the dependency graph.
-
-You can also choose the output file explicitly:
+Choose the output format and destination explicitly:
 
 ```bash
-depcycle analyze /path/to/your/project -o project-dependencies.html
+depcycle analyze /path/to/your/project --format html --output dependencies.html
+depcycle analyze /path/to/your/project --format json --output dependencies.json
+depcycle analyze /path/to/your/project --format dot --output dependencies.dot
 ```
 
-## Interactive HTML Report
+If `--format` is omitted, DepCycle infers the format from a recognized output filename extension. If it cannot infer a format, it defaults to HTML. Use `-` as the output path to write the report to standard output:
 
-The HTML report provides an interactive dependency map for exploring a project visually.
+```bash
+depcycle analyze /path/to/your/project --format json --output -
+```
 
-The report provides an interactive dependency map with:
-
-* Left-to-right dependency flow
-* Zoom and pan
-* Fit-to-view
-* Module search
-* Click-to-highlight dependencies and dependents
-* 1-hop and 2-hop focus modes
-* Module details
-* Cycle highlighting
-* Collapsible information panel
-* Drag-and-reposition nodes
-
-Nodes are visually classified as:
-
-| Type        | Meaning                                     |
-| ----------- | ------------------------------------------- |
-| Local       | Module belonging to the analyzed project    |
-| Stdlib      | Python standard-library module              |
-| Third-party | Dependency identified from project metadata |
-| Unknown     | Dependency that could not be classified     |
-
-Circular dependencies are highlighted directly in the graph so they are easy to investigate.
-
-## Output Formats
+## Output formats
 
 ### HTML
 
-Generate an interactive HTML report:
+The HTML report provides an interactive dependency map for exploring module relationships and circular dependencies.
 
-```bash
-depcycle analyze /path/to/your/project -f html -o dependencies.html
-```
-
-This is the best format for visually exploring the dependency graph.
+![Screenshot of the DepCycle HTML report](docs/generated/realistic_app_html_screenshot.png)
 
 ### JSON
 
-Generate machine-readable output:
+JSON output is suitable for scripts and other tools. It contains project information, nodes, edges, detected cycles, and summary statistics, including fan-in, fan-out, and isolated-module counts.
 
 ```bash
-depcycle analyze /path/to/your/project -f json -o dependencies.json
+depcycle analyze /path/to/your/project --format json --output dependencies.json
 ```
-
-The JSON report contains the project summary, nodes, edges, and detected
-cycles. The summary includes overall counts as well as `max_fan_out`,
-`max_fan_in`, and `isolated_modules` (modules with zero dependencies and zero
-dependents), useful as a quick health check for a project's structure.
 
 ### DOT
 
-Generate a dependency graph in DOT format:
+DOT output is a text-based graph description that can be used by compatible tools and workflows. DepCycle writes DOT source; it does not itself generate PNG or SVG graph images.
 
 ```bash
-depcycle analyze /path/to/your/project -f dot -o dependencies.dot
+depcycle analyze /path/to/your/project --format dot --output dependencies.dot
 ```
 
-For example, DepCycle can produce DOT output like this:
+## Inspect modules and cycles
 
-```dot
-digraph depcycle {
-  rankdir=LR;
-  node [shape=box style="filled,rounded" fontname="Helvetica"];
-
-  "app" [fillcolor="#BBDEFB" color="#1E88E5" label="app"];
-  "app.api" [fillcolor="#BBDEFB" color="#1E88E5" label="app.api"];
-  "app.events" [fillcolor="#BBDEFB" color="#1E88E5" label="app.events"];
-  "app.models" [fillcolor="#BBDEFB" color="#1E88E5" label="app.models"];
-  "app.repositories" [fillcolor="#BBDEFB" color="#1E88E5" label="app.repositories"];
-  "app.services" [fillcolor="#BBDEFB" color="#1E88E5" label="app.services"];
-  "app.utils" [fillcolor="#BBDEFB" color="#1E88E5" label="app.utils"];
-  "main" [fillcolor="#BBDEFB" color="#1E88E5" label="main"];
-
-  "app.api" -> "app.services" [color="#444444" penwidth=1.2];
-  "app.events" -> "app.utils" [color="#D32F2F" penwidth=2.5];
-  "app.models" -> "app.events" [color="#D32F2F" penwidth=2.5];
-  "app.repositories" -> "app.models" [color="#D32F2F" penwidth=2.5];
-  "app.services" -> "app.repositories" [color="#444444" penwidth=1.2];
-  "app.utils" -> "app.repositories" [color="#D32F2F" penwidth=2.5];
-  "main" -> "app.api" [color="#444444" penwidth=1.2];
-}
-```
-
-The DOT output can also be rendered as an SVG:
+Inspect a particular module:
 
 ```bash
-dot -Tsvg dependencies.dot -o dependencies.svg
+depcycle inspect /path/to/your/project my_package.service
 ```
 
-For the same graph:
-
-![DepCycle Graphviz SVG output](docs/images/messy-project.svg)
-
-The generated SVG can be viewed directly in a browser or included in documentation and other workflows.
-
-
-## Finding Circular Dependencies
-
-DepCycle automatically checks the dependency graph for cycles.
-
-For example:
-
-```text
-⚠️  Warning: Found 1 circular dependency cycles!
-    Cycle 1: app.repositories → app.models → app.events → app.utils → app.repositories
-```
-
-The same cycle is highlighted in the HTML and DOT output.
-
-## Focused Analysis
-
-For a single module, print a focused summary to stderr while still
-generating the full requested output:
+List circular dependencies in a project:
 
 ```bash
-depcycle analyze /path/to/your/project --target app.services.orders
+depcycle inspect /path/to/your/project --cycles
 ```
 
-```text
-Target: app.services.orders
-  Direct dependencies: 8
-  Direct dependents:   7
-  Cycles involving:    1
-```
+Inspection results are printed as JSON. The `query` subcommand is retained as a legacy command; `inspect` is the recommended interface.
 
-To also see how many modules are transitively affected by a module (its
-full blast radius), use `--impact`:
+## Circular dependencies and CI
+
+DepCycle reports detected cycles during analysis. Use `--fail-on-cycles` to exit with status `1` when at least one cycle is found:
 
 ```bash
-depcycle analyze /path/to/your/project --impact app.services.orders
+depcycle analyze /path/to/your/project --fail-on-cycles
 ```
 
-```text
-Impact: app.services.orders
-  Direct dependents:    7
-  Reachable dependents: 31
-  Direct dependencies:  8
-  Cycles involving:     1
-```
+This is useful in CI workflows where detected cycles should fail a check.
 
-To see how two modules are connected, use `--path`:
-
-```bash
-depcycle analyze /path/to/your/project --path app.api app.repositories.orders
-```
-
-```text
-Path: app.api → app.services → app.repositories.orders
-```
-
-All three flags can be combined with each other and with any output format.
-
-## Filtering Dependencies
-
-By default, DepCycle shows local modules, standard-library modules, third-party dependencies, and unknown dependencies.
+## Filtering the graph
 
 Hide third-party dependencies:
 
@@ -251,191 +174,76 @@ Hide standard-library modules:
 depcycle analyze /path/to/your/project --no-stdlib
 ```
 
-You can combine these:
+Hide unknown dependencies:
 
 ```bash
-depcycle analyze /path/to/your/project \
-  --no-third-party \
-  --no-stdlib
+depcycle analyze /path/to/your/project --no-unknown
 ```
 
-## Excluding Files and Directories
-
-DepCycle automatically excludes common generated and environment directories such as:
-
-```text
-.venv
-venv
-env
-__pycache__
-.git
-node_modules
-dist
-build
-tests
-```
-
-You can add your own exclusion patterns:
+Combine filters to focus on local dependencies:
 
 ```bash
-depcycle analyze /path/to/your/project -e tests -e "generated/*.py"
+depcycle analyze /path/to/your/project --no-third-party --no-stdlib --no-unknown
 ```
 
-You can specify `--exclude` multiple times.
-
-To disable the built-in exclusions and analyze everything except the patterns you explicitly provide:
+DepCycle excludes common generated and environment paths by default, including virtual environments, `__pycache__`, version-control directories, build output, tests, examples, and migrations. Add exclusion patterns with `-e` or `--exclude`; the option can be repeated:
 
 ```bash
-depcycle analyze /path/to/your/project --include-all
+depcycle analyze /path/to/your/project --exclude tests --exclude 'generated/*.py'
 ```
 
-## Project Dependencies
-
-DepCycle can use common Python project metadata to recognize third-party dependencies.
-
-Supported metadata includes:
-
-* `pyproject.toml`
-* `requirements.txt`
-* `requirements-*.txt`
-* `setup.cfg`
-* `setup.py`
-* `Pipfile`
-
-This helps DepCycle distinguish project modules from external packages.
-
-## Choosing the Output Format Automatically
-
-DepCycle can infer the format from the output filename.
-
-For example:
+Use `--include-all` to disable the built-in exclusion patterns and rely only on patterns explicitly supplied for that run:
 
 ```bash
-depcycle analyze /path/to/your/project -o dependencies.json
+depcycle analyze /path/to/your/project --include-all --exclude generated
 ```
 
-produces JSON, while:
+## Project configuration
 
-```bash
-depcycle analyze /path/to/your/project -o dependencies.dot
-```
-
-produces DOT.
-
-Without an output extension or explicit format, HTML is used.
-
-You can always specify the format explicitly:
-
-```bash
-depcycle analyze /path/to/your/project \
-  --format html \
-  --output dependencies.html
-```
-
-## Writing to Standard Output
-
-Use `-` as the output path to write the selected format to standard output:
-
-```bash
-depcycle analyze /path/to/your/project -f json -o -
-```
-
-This is useful when piping the output into another command or tool.
-
-## Command-Line Help
-
-See all available options:
-
-```bash
-depcycle --help
-depcycle analyze --help
-depcycle query --help
-```
-
-## Typical Workflow
-
-A simple workflow is:
-
-```bash
-depcycle analyze /path/to/your/project
-```
-
-Then open:
-
-```text
-dependencies.html
-```
-
-Start by looking for:
-
-1. Large dependency clusters
-2. Modules with many incoming or outgoing dependencies
-3. Circular dependencies highlighted in red
-4. External dependencies mixed into the graph
-
-Clicking a module lets you inspect its direct relationships and explore the surrounding part of the graph.
-
-## Inspect Interface
-
-Alongside `analyze`, DepCycle provides an `inspect` subcommand to query a project's dependency graph directly in your terminal as clean, machine-readable JSON.
-
-```bash
-# Inspect a specific module
-depcycle inspect /path/to/your/project app.services.orders
-
-# Check for circular dependencies across the project
-depcycle inspect /path/to/your/project --cycles
-```
-
-## CI/CD Integration & Configuration
-
-### Failing Builds on Circular Dependencies
-
-Use `--fail-on-cycles` in CI pipelines to prevent circular imports from being introduced:
-
-```bash
-depcycle analyze /path/to/your/project --fail-on-cycles
-```
-
-### Configuration via `pyproject.toml`
-
-You can configure default settings in your project's `pyproject.toml` under `[tool.depcycle]`:
+DepCycle reads supported settings from the `[tool.depcycle]` section of a project's `pyproject.toml`. For example:
 
 ```toml
 [tool.depcycle]
-exclude = [
-    "tests/*",
-    "examples/*",
-    "docs/*",
-]
+exclude = ["generated", "docs"]
 show_third_party = true
 show_stdlib = true
+show_unknown = true
 fail_on_cycles = false
+```
+
+For third-party dependency recognition, DepCycle can read declared dependencies from `pyproject.toml`, `requirements.txt`, `requirements-*.txt`, `setup.cfg`, `setup.py`, and `Pipfile`.
+
+## Development
+
+This repository uses `uv` and the Makefile for development tasks. From the repository root, install the development environment and check the CLI:
+
+```bash
+make install
+uv run depcycle --help
+```
+
+Common development commands:
+
+```bash
+make format
+make lint
+make typecheck
+make test
+make coverage
+make check
+make build
+```
+
+Regenerate an example report using the checked-out source:
+
+```bash
+uv run depcycle analyze examples/basic_app --format html --output docs/generated/basic_app.html
 ```
 
 ## Requirements
 
 DepCycle supports Python 3.10 and newer.
 
-## Development
-
-To set up a local development environment:
-
-```bash
-# Create a virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Upgrade build tools and install in editable mode with dev extras
-pip install --upgrade pip setuptools build
-pip install -e ".[dev]"
-
-# Run tests
-pytest
-```
-
 ## License
 
-DepCycle is licensed under the MIT License.
-
-See [LICENSE](LICENSE) for the full license text.
+DepCycle is licensed under the MIT License. See [`LICENSE`](LICENSE) for the full license text.

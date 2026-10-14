@@ -47,7 +47,6 @@ def test_graph_basics() -> None:
     assert list(iter(g)) == [n1]
 
 
-
 def test_graph_metrics_and_dependents() -> None:
     """Test fan-out, fan-in, and dependent node calculations."""
     g = Graph()

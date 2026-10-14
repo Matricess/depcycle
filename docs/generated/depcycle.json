@@ -1,0 +1,361 @@
+{
+  "schema_version": 2,
+  "project": "Project",
+  "summary": {
+    "total_modules": 21,
+    "local": 21,
+    "stdlib": 0,
+    "third_party": 0,
+    "unknown": 0,
+    "cycles_found": 0,
+    "max_fan_out": 8,
+    "max_fan_in": 6,
+    "isolated_modules": 0
+  },
+  "nodes": [
+    {
+      "id": "depcycle",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 8
+    },
+    {
+      "id": "depcycle.__main__",
+      "type": "local",
+      "file": "__main__.py",
+      "dependencies": 1
+    },
+    {
+      "id": "depcycle.analyzer",
+      "type": "local",
+      "file": "analyzer.py",
+      "dependencies": 7
+    },
+    {
+      "id": "depcycle.cli",
+      "type": "local",
+      "file": "cli.py",
+      "dependencies": 3
+    },
+    {
+      "id": "depcycle.config",
+      "type": "local",
+      "file": "config.py",
+      "dependencies": 0
+    },
+    {
+      "id": "depcycle.graph",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 3
+    },
+    {
+      "id": "depcycle.graph.edge",
+      "type": "local",
+      "file": "edge.py",
+      "dependencies": 0
+    },
+    {
+      "id": "depcycle.graph.graph",
+      "type": "local",
+      "file": "graph.py",
+      "dependencies": 1
+    },
+    {
+      "id": "depcycle.graph.node",
+      "type": "local",
+      "file": "node.py",
+      "dependencies": 1
+    },
+    {
+      "id": "depcycle.output",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 6
+    },
+    {
+      "id": "depcycle.output.base",
+      "type": "local",
+      "file": "base.py",
+      "dependencies": 1
+    },
+    {
+      "id": "depcycle.output.dot",
+      "type": "local",
+      "file": "dot.py",
+      "dependencies": 1
+    },
+    {
+      "id": "depcycle.output.html",
+      "type": "local",
+      "file": "html.py",
+      "dependencies": 1
+    },
+    {
+      "id": "depcycle.output.json",
+      "type": "local",
+      "file": "json.py",
+      "dependencies": 1
+    },
+    {
+      "id": "depcycle.output.model",
+      "type": "local",
+      "file": "model.py",
+      "dependencies": 3
+    },
+    {
+      "id": "depcycle.output.text",
+      "type": "local",
+      "file": "text.py",
+      "dependencies": 3
+    },
+    {
+      "id": "depcycle.parsing",
+      "type": "local",
+      "file": "__init__.py",
+      "dependencies": 3
+    },
+    {
+      "id": "depcycle.parsing.imports",
+      "type": "local",
+      "file": "imports.py",
+      "dependencies": 0
+    },
+    {
+      "id": "depcycle.parsing.metadata",
+      "type": "local",
+      "file": "metadata.py",
+      "dependencies": 0
+    },
+    {
+      "id": "depcycle.parsing.workspace",
+      "type": "local",
+      "file": "workspace.py",
+      "dependencies": 0
+    },
+    {
+      "id": "depcycle.utils",
+      "type": "local",
+      "file": "utils.py",
+      "dependencies": 0
+    }
+  ],
+  "edges": [
+    {
+      "source": "depcycle",
+      "target": "depcycle.cli",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle",
+      "target": "depcycle.config",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle",
+      "target": "depcycle.graph.graph",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle",
+      "target": "depcycle.graph.node",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle",
+      "target": "depcycle.output",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle",
+      "target": "depcycle.parsing.imports",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle",
+      "target": "depcycle.parsing.metadata",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle",
+      "target": "depcycle.parsing.workspace",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.__main__",
+      "target": "depcycle.cli",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.analyzer",
+      "target": "depcycle.config",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.analyzer",
+      "target": "depcycle.graph.graph",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.analyzer",
+      "target": "depcycle.graph.node",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.analyzer",
+      "target": "depcycle.parsing.imports",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.analyzer",
+      "target": "depcycle.parsing.metadata",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.analyzer",
+      "target": "depcycle.parsing.workspace",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.analyzer",
+      "target": "depcycle.utils",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.cli",
+      "target": "depcycle.analyzer",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.cli",
+      "target": "depcycle.config",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.cli",
+      "target": "depcycle.output",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.graph",
+      "target": "depcycle.graph.edge",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.graph",
+      "target": "depcycle.graph.graph",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.graph",
+      "target": "depcycle.graph.node",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.graph.graph",
+      "target": "depcycle.graph.node",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.graph.node",
+      "target": "depcycle.graph.edge",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output",
+      "target": "depcycle.output.base",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output",
+      "target": "depcycle.output.dot",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output",
+      "target": "depcycle.output.html",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output",
+      "target": "depcycle.output.json",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output",
+      "target": "depcycle.output.model",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output",
+      "target": "depcycle.output.text",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output.base",
+      "target": "depcycle.graph.graph",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output.dot",
+      "target": "depcycle.output.base",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output.html",
+      "target": "depcycle.output.base",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output.json",
+      "target": "depcycle.output.base",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output.model",
+      "target": "depcycle.graph.graph",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output.model",
+      "target": "depcycle.graph.node",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output.model",
+      "target": "depcycle.output.base",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output.text",
+      "target": "depcycle.graph.graph",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output.text",
+      "target": "depcycle.graph.node",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.output.text",
+      "target": "depcycle.output.base",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.parsing",
+      "target": "depcycle.parsing.imports",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.parsing",
+      "target": "depcycle.parsing.metadata",
+      "in_cycle": false
+    },
+    {
+      "source": "depcycle.parsing",
+      "target": "depcycle.parsing.workspace",
+      "in_cycle": false
+    }
+  ],
+  "cycles": []
+}

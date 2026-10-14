@@ -44,7 +44,7 @@ def test_analyze_project_full(tmp_path: Path) -> None:
         show_unknown=True,
     )
 
-    graph, cycles = analyze_project(config)
+    graph, _cycles = analyze_project(config)
 
     assert "pkg.mod_a" in graph.nodes
     assert "pkg.mod_b" in graph.nodes
@@ -56,7 +56,7 @@ def test_analyze_project_full(tmp_path: Path) -> None:
     assert graph.nodes["requests"].node_type == NodeType.THIRD_PARTY
     assert graph.nodes["unknown_pkg"].node_type == NodeType.UNKNOWN
 
-    assert len(cycles) >= 1
+    assert len(_cycles) >= 1
 
 
 def test_analyze_project_filter_nodes(tmp_path: Path) -> None:
@@ -64,7 +64,9 @@ def test_analyze_project_filter_nodes(tmp_path: Path) -> None:
     ws_path.mkdir()
 
     mod_a = ws_path / "mod_a.py"
-    mod_a.write_text("import os\nimport requests\nimport unknown_pkg\n", encoding="utf-8")
+    mod_a.write_text(
+        "import os\nimport requests\nimport unknown_pkg\n", encoding="utf-8"
+    )
 
     (ws_path / "requirements.txt").write_text("requests\n", encoding="utf-8")
 
@@ -75,7 +77,7 @@ def test_analyze_project_filter_nodes(tmp_path: Path) -> None:
         show_unknown=False,
     )
 
-    graph, cycles = analyze_project(config)
+    graph, _cycles = analyze_project(config)
 
     assert "mod_a" in graph.nodes
     assert "os" not in graph.nodes
@@ -83,13 +85,16 @@ def test_analyze_project_filter_nodes(tmp_path: Path) -> None:
     assert "unknown_pkg" not in graph.nodes
 
 
-def test_analyze_project_existing_node_and_empty_module(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_analyze_project_existing_node_and_empty_module(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     ws_path = tmp_path / "myproj"
     ws_path.mkdir()
 
     (ws_path / "mod_a.py").write_text("import sys\n", encoding="utf-8")
 
     from depcycle import utils
+
     original_path_to_mod = utils.path_to_module_name
 
     calls = 0
@@ -105,6 +110,49 @@ def test_analyze_project_existing_node_and_empty_module(tmp_path: Path, monkeypa
     monkeypatch.setattr(utils, "path_to_module_name", mock_path_to_module_name)
 
     config = AnalysisConfig(project_path=ws_path)
-    graph, cycles = analyze_project(config)
+    graph, _cycles = analyze_project(config)
     assert "mod_a" in graph.nodes
 
+
+def test_analyze_src_layout_resolves_relative_imports(
+    tmp_path: Path,
+) -> None:
+    project_root = tmp_path / "project"
+    package_root = project_root / "src" / "depcycle"
+    package_root.mkdir(parents=True)
+
+    (package_root / "__init__.py").write_text("", encoding="utf-8")
+    (package_root / "cli.py").write_text(
+        "from .analyzer import analyze_project\n",
+        encoding="utf-8",
+    )
+    (package_root / "analyzer.py").write_text(
+        "from .utils import normalize_name\n",
+        encoding="utf-8",
+    )
+    (package_root / "utils.py").write_text(
+        "def normalize_name(name: str) -> str:\n    return name\n",
+        encoding="utf-8",
+    )
+
+    config = AnalysisConfig(project_path=project_root)
+    graph, cycles = analyze_project(config)
+
+    assert cycles == []
+    assert set(graph.nodes) == {
+        "depcycle",
+        "depcycle.cli",
+        "depcycle.analyzer",
+        "depcycle.utils",
+    }
+
+    assert {node.name for node in graph.nodes["depcycle.cli"].dependencies} == {
+        "depcycle.analyzer"
+    }
+
+    assert {node.name for node in graph.nodes["depcycle.analyzer"].dependencies} == {
+        "depcycle.utils"
+    }
+
+    assert ".analyzer" not in graph.nodes
+    assert ".utils" not in graph.nodes

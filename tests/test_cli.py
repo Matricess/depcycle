@@ -35,7 +35,9 @@ def test_cli_analyze_stdout(tmp_path: Path, capsys: pytest.CaptureFixture[str]) 
     assert "Analyzing project:" in captured.err
 
 
-def test_cli_analyze_default_output_filename(tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch) -> None:
+def test_cli_analyze_default_output_filename(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / "app.py").write_text("import sys\n", encoding="utf-8")
 
@@ -46,7 +48,9 @@ def test_cli_analyze_default_output_filename(tmp_path: Path, capsys: pytest.Capt
     assert "✓ DOT output saved to: dependencies.dot" in captured.err
 
 
-def test_cli_analyze_explicit_format(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_analyze_explicit_format(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     (tmp_path / "app.py").write_text("import sys\n", encoding="utf-8")
     out_file = tmp_path / "graph.dot"
 
@@ -56,7 +60,9 @@ def test_cli_analyze_explicit_format(tmp_path: Path, capsys: pytest.CaptureFixtu
     assert "✓ DOT output saved to:" in captured.err
 
 
-def test_cli_analyze_inferred_format_from_filename(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_analyze_inferred_format_from_filename(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     (tmp_path / "app.py").write_text("import sys\n", encoding="utf-8")
     out_file = tmp_path / "out.json"
 
@@ -66,7 +72,9 @@ def test_cli_analyze_inferred_format_from_filename(tmp_path: Path, capsys: pytes
     assert "✓ JSON output saved to:" in captured.err
 
 
-def test_cli_analyze_many_cycles_warning(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_analyze_many_cycles_warning(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     # Create > 5 cycles
     for i in range(6):
         (tmp_path / f"m{i}_a.py").write_text(f"import m{i}_b\n", encoding="utf-8")
@@ -80,7 +88,9 @@ def test_cli_analyze_many_cycles_warning(tmp_path: Path, capsys: pytest.CaptureF
 def test_cli_analyze_unsupported_format(tmp_path: Path) -> None:
     (tmp_path / "app.py").write_text("import sys\n", encoding="utf-8")
     with pytest.raises(ValueError, match="Unsupported output format"):
-        parsed = DepCycleCLI._create_parser().parse_args(["analyze", str(tmp_path), "-f", "html"])
+        parsed = DepCycleCLI._create_parser().parse_args(
+            ["analyze", str(tmp_path), "-f", "html"]
+        )
         parsed.format = "yaml"
         DepCycleCLI._main_analyze(parsed)
 
@@ -94,7 +104,9 @@ def test_cli_analyze_fail_on_cycles(tmp_path: Path) -> None:
     assert exc_info.value.code == 1
 
 
-def test_cli_inspect_no_args_defaults_to_cycles(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_inspect_no_args_defaults_to_cycles(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     (tmp_path / "a.py").write_text("import sys\n", encoding="utf-8")
 
     DepCycleCLI.main(["inspect", str(tmp_path)])
@@ -114,7 +126,9 @@ def test_cli_inspect_cycles(tmp_path: Path, capsys: pytest.CaptureFixture[str]) 
     assert len(data["cycles"]) >= 1
 
 
-def test_cli_inspect_module_found(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_inspect_module_found(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     (tmp_path / "a.py").write_text("import sys\n", encoding="utf-8")
 
     DepCycleCLI.main(["inspect", str(tmp_path), "a"])
@@ -123,7 +137,9 @@ def test_cli_inspect_module_found(tmp_path: Path, capsys: pytest.CaptureFixture[
     assert data["module"] == "a"
 
 
-def test_cli_inspect_module_not_found(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_inspect_module_not_found(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     (tmp_path / "a.py").write_text("import sys\n", encoding="utf-8")
 
     with pytest.raises(SystemExit) as exc_info:
@@ -134,7 +150,9 @@ def test_cli_inspect_module_not_found(tmp_path: Path, capsys: pytest.CaptureFixt
     assert "error" in data
 
 
-def test_cli_query_legacy_subcommand(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_query_legacy_subcommand(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     (tmp_path / "a.py").write_text("import sys\n", encoding="utf-8")
 
     DepCycleCLI.main(["query", str(tmp_path), "cycles"])

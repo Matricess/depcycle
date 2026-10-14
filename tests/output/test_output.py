@@ -13,12 +13,7 @@ import pytest
 from depcycle.graph.graph import Graph
 from depcycle.graph.node import Node, NodeType
 from depcycle.output.base import (
-    CycleExport,
-    EdgeExport,
-    GraphExport,
     IOutputWriter,
-    NodeExport,
-    SummaryExport,
     project_label,
     relative_file_path,
 )
@@ -214,10 +209,8 @@ def test_build_export_empty_cycles_and_non_enum_type() -> None:
     assert export.cycles[0]["nodes"] == ["a", "b", "a"]
 
 
-
 def test_dot_writer_unrecognized_type() -> None:
     writer = DotWriter()
     fill, color = writer._node_attributes("unknown_custom")
     assert fill == "#F5F5F5"
     assert color == "#444444"
-

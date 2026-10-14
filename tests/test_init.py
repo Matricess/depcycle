@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import depcycle
 from depcycle import (
-    ASTParser,
     AnalysisConfig,
+    ASTParser,
     DepCycleCLI,
     DotWriter,
     Graph,

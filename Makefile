@@ -19,8 +19,7 @@ test:
 coverage:
 	uv run pytest --cov=depcycle --cov-branch --cov-report=term-missing
 
-check: 
-	lint typecheck test
+check: lint typecheck test
 
 build:
 	uv build

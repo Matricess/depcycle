@@ -71,6 +71,7 @@ class AnalysisConfig:
         cli_exclude: list[str] | None = None,
         cli_show_third_party: bool = True,
         cli_show_stdlib: bool = True,
+        cli_show_unknown: bool = True,
         include_all: bool = False,
         fail_on_cycles: bool = False,
     ) -> AnalysisConfig:
@@ -96,7 +97,7 @@ class AnalysisConfig:
             show_third_party=cli_show_third_party
             and toml_cfg.get("show_third_party", True),
             show_stdlib=cli_show_stdlib and toml_cfg.get("show_stdlib", True),
-            show_unknown=True,
+            show_unknown=cli_show_unknown and toml_cfg.get("show_unknown", True),
             include_all=include_all,
             fail_on_cycles=fail_on_cycles or toml_cfg.get("fail_on_cycles", False),
         )

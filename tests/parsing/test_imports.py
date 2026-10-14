@@ -178,3 +178,23 @@ def test_get_imports_from_file_unicode_error(tmp_path: Path) -> None:
 
     with pytest.raises(UnicodeDecodeError):
         ASTParser.get_imports_from_file(file_path)
+
+
+def test_ignores_imports_inside_type_checking_block(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "example.py"
+    source.write_text(
+        "from typing import TYPE_CHECKING\n"
+        "from .edge import Edge\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from .node import Node\n",
+        encoding="utf-8",
+    )
+
+    imports = ASTParser.get_imports_from_file(source)
+
+    assert "typing" in imports
+    assert ".edge" in imports
+    assert ".node" not in imports

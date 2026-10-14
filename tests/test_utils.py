@@ -10,11 +10,18 @@ from pathlib import Path
 
 import pytest
 
-from depcycle.utils import get_stdlib_names, normalize_name, path_to_module_name
+from depcycle.utils import (
+    get_stdlib_names,
+    normalize_name,
+    path_to_module_name,
+    resolve_relative_import,
+)
 
 
 def test_get_stdlib_names_native(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(sys, "stdlib_module_names", {"os", "sys", "custom"}, raising=False)
+    monkeypatch.setattr(
+        sys, "stdlib_module_names", {"os", "sys", "custom"}, raising=False
+    )
     names = get_stdlib_names()
     assert "os" in names
     assert "sys" in names
@@ -53,3 +60,36 @@ def test_path_to_module_name() -> None:
     # Outside root
     outside_file = Path("/workspace/other/bar.py")
     assert path_to_module_name(outside_file, root) is None
+
+
+def test_resolve_relative_import_in_same_package() -> None:
+    assert resolve_relative_import(".analyzer", "depcycle.cli") == ("depcycle.analyzer")
+
+
+def test_resolve_relative_import_in_nested_package() -> None:
+    assert (
+        resolve_relative_import(".metadata", "depcycle.parsing.imports")
+        == "depcycle.parsing.metadata"
+    )
+
+
+def test_resolve_relative_import_to_parent_package() -> None:
+    assert (
+        resolve_relative_import("..graph.graph", "depcycle.parsing.imports")
+        == "depcycle.graph.graph"
+    )
+
+
+def test_resolve_relative_import_from_package_init() -> None:
+    assert (
+        resolve_relative_import(".utils", "depcycle", is_package=True)
+        == "depcycle.utils"
+    )
+
+
+def test_resolve_relative_import_preserves_absolute_import() -> None:
+    assert resolve_relative_import("requests", "depcycle.cli") == "requests"
+
+
+def test_resolve_relative_import_beyond_package_root() -> None:
+    assert resolve_relative_import("..outside", "depcycle.cli") is None

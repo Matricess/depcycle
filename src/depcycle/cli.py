@@ -82,6 +82,11 @@ Examples:
             help="Exclude standard library modules from the graph",
         )
         analyze_parser.add_argument(
+            "--no-unknown",
+            action="store_true",
+            help="Exclude unknown dependencies from the graph",
+        )
+        analyze_parser.add_argument(
             "--include-all",
             action="store_true",
             help="Include files normally excluded by default (venv, __pycache__, etc.)",
@@ -182,6 +187,7 @@ Examples:
             cli_exclude=parsed_args.exclude,
             cli_show_third_party=not parsed_args.no_third_party,
             cli_show_stdlib=not parsed_args.no_stdlib,
+            cli_show_unknown=not parsed_args.no_unknown,
             include_all=parsed_args.include_all,
             fail_on_cycles=parsed_args.fail_on_cycles,
         )
@@ -192,7 +198,7 @@ Examples:
 
         if cycles:
             print(
-                f"\n⚠️ Warning: Found {len(cycles)} circular dependency cycles!",
+                f"\nWarning: Found {len(cycles)} circular dependency cycles!",
                 file=sys.stderr,
             )
             for i, cycle in enumerate(cycles[:5], start=1):

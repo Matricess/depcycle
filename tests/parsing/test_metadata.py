@@ -24,25 +24,19 @@ def test_marker_matches_python_version() -> None:
     """Test evaluation of supported Python version markers."""
     reader = PackageMetadataReader
 
-    assert reader._marker_matches_python_version(
-        "os_name == 'posix'"
-    ) is True
+    assert reader._marker_matches_python_version("os_name == 'posix'") is True
 
-    assert reader._marker_matches_python_version(
-        "python_version >= '2.0'"
-    ) is True
+    assert reader._marker_matches_python_version("python_version >= '2.0'") is True
 
-    assert reader._marker_matches_python_version(
-        "python_version < '1.0'"
-    ) is False
+    assert reader._marker_matches_python_version("python_version < '1.0'") is False
 
-    assert reader._marker_matches_python_version(
-        "python_full_version >= '2.0.0'"
-    ) is True
+    assert (
+        reader._marker_matches_python_version("python_full_version >= '2.0.0'") is True
+    )
 
-    assert reader._marker_matches_python_version(
-        "python_full_version < '1.0.0'"
-    ) is False
+    assert (
+        reader._marker_matches_python_version("python_full_version < '1.0.0'") is False
+    )
 
 
 def test_requirement_marker_matches() -> None:
@@ -52,13 +46,19 @@ def test_requirement_marker_matches() -> None:
     assert reader._requirement_marker_matches("requests") is True
     assert reader._requirement_marker_matches("requests; ") is True
 
-    assert reader._requirement_marker_matches(
-        "requests; python_version >= '3.0' or sys_platform == 'win32'"
-    ) is True
+    assert (
+        reader._requirement_marker_matches(
+            "requests; python_version >= '3.0' or sys_platform == 'win32'"
+        )
+        is True
+    )
 
-    assert reader._requirement_marker_matches(
-        "requests; python_version >= '2.0' and python_version < '100.0'"
-    ) is True
+    assert (
+        reader._requirement_marker_matches(
+            "requests; python_version >= '2.0' and python_version < '100.0'"
+        )
+        is True
+    )
 
 
 def test_parse_requirement_name() -> None:
@@ -68,25 +68,18 @@ def test_parse_requirement_name() -> None:
     assert reader._parse_requirement_name("") == ""
     assert reader._parse_requirement_name("# comment line") == ""
 
-    assert reader._parse_requirement_name(
-        "pkg; python_version < '1.0'"
-    ) == ""
+    assert reader._parse_requirement_name("pkg; python_version < '1.0'") == ""
 
-    assert reader._parse_requirement_name(
-        "git+https://github.com/foo/bar#egg=my-pkg"
-    ) == "my-pkg"
+    assert (
+        reader._parse_requirement_name("git+https://github.com/foo/bar#egg=my-pkg")
+        == "my-pkg"
+    )
 
-    assert reader._parse_requirement_name(
-        "-e .#egg=editable-pkg"
-    ) == "editable-pkg"
+    assert reader._parse_requirement_name("-e .#egg=editable-pkg") == "editable-pkg"
 
-    assert reader._parse_requirement_name(
-        "requests>=2.25.0"
-    ) == "requests"
+    assert reader._parse_requirement_name("requests>=2.25.0") == "requests"
 
-    assert reader._parse_requirement_name(
-        "Foo_Bar.Baz>=1.0"
-    ) == "foo-bar-baz"
+    assert reader._parse_requirement_name("Foo_Bar.Baz>=1.0") == "foo-bar-baz"
 
     assert reader._parse_requirement_name("!=1.0") == ""
 
@@ -298,4 +291,3 @@ def test_read_file_unsupported(tmp_path: Path) -> None:
     path = tmp_path / "unknown.txt"
     path.write_text("something", encoding="utf-8")
     assert PackageMetadataReader._read_file(path) == set()
-

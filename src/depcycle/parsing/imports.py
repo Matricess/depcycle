@@ -19,6 +19,24 @@ class _ImportVisitor(ast.NodeVisitor):
         """Initialize the visitor with an empty imports set."""
         self.imports: set[str] = set()
 
+    def visit_If(self, node: ast.If) -> None:
+        """Skip type-only imports guarded by TYPE_CHECKING."""
+        is_type_checking = (
+            isinstance(node.test, ast.Name) and node.test.id == "TYPE_CHECKING"
+        ) or (
+            isinstance(node.test, ast.Attribute)
+            and node.test.attr == "TYPE_CHECKING"
+            and isinstance(node.test.value, ast.Name)
+            and node.test.value.id == "typing"
+        )
+
+        if is_type_checking:
+            for child in node.orelse:
+                self.visit(child)
+            return
+
+        self.generic_visit(node)
+
     def visit_Import(self, node: ast.Import) -> None:
         """
         Visit an `import` statement.

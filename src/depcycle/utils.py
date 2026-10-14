@@ -57,3 +57,33 @@ def path_to_module_name(file_path: Path, root_path: Path) -> str | None:
         parts.pop()
 
     return ".".join(parts) if parts else None
+
+
+def resolve_relative_import(
+    import_name: str,
+    source_module: str,
+    *,
+    is_package: bool = False,
+) -> str | None:
+    """Resolve a relative import to its fully qualified module name."""
+    if not import_name.startswith("."):
+        return import_name
+
+    level = len(import_name) - len(import_name.lstrip("."))
+    imported_module = import_name[level:]
+
+    package_name = source_module if is_package else source_module.rpartition(".")[0]
+    package_parts = package_name.split(".") if package_name else []
+
+    ascend = level - 1
+
+    if not package_parts or ascend >= len(package_parts):
+        return None
+
+    if ascend:
+        package_parts = package_parts[:-ascend]
+
+    if imported_module:
+        package_parts.extend(imported_module.split("."))
+
+    return ".".join(package_parts) or None
